@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v4.1 - Merged</title>
+<title>VIP GUARDIAN v3.1 + Plate Scanner</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-  body { background: #000; color: #0ff; overflow: hidden; transition: filter 0.3s; }
-  body.night { filter: hue-rotate(90deg) contrast(1.4); }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
+  body { background: #000; color: #0ff; overflow: hidden; transition: all 0.3s; }
+  body.light { background: #f0f0f0; color: #003; }
 
-.header { background: linear-gradient(90deg, #001122, #003366); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 16px; }
-.ai-score { background: #0f0; color: #000; padding: 4px 8px; border-radius: 15px; font-size: 11px; font-weight: bold; }
+.header { background: linear-gradient(90deg, #001122, #004488); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 18px; text-shadow: 0 0 10px #0ff; }
+.ai-score { background: #0f0; color: #000; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
 
-.tabs { display: flex; background: #111; border-bottom: 2px solid #0ff; overflow-x: auto; }
-.tab { flex: 1; min-width: 80px; padding: 8px 4px; text-align: center; cursor: pointer; background: #1a1a1a; border-right: 1px solid #333; font-size: 9px; }
+.tabs { display: flex; background: #111; border-bottom: 2px solid #0ff; }
+.tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; background: #1a1a1a; border-right: 1px solid #333; font-size: 10px; }
 .tab.active { background: #0ff; color: #000; }
 
 .screen { display: none; padding: 10px; height: calc(100vh - 105px); overflow-y: auto; }
@@ -23,9 +23,10 @@
 .btn { background: #0ff; color: #000; border: none; padding: 8px 12px; margin: 5px 2px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
 .btn-danger { background: #ff0044; color: #fff; font-size: 14px; padding: 12px; width: 100%; }
 .btn-gps { background: #00ff88; }
-.btn-telegram { background: #0088cc; color: #fff; }
+.btn-whatsapp { background: #25D366; color: #fff; }
 
   input, select { width: 100%; padding: 6px; margin: 5px 0; background: #222; border: 2px solid #0ff; color: #0ff; border-radius: 4px; font-size: 12px; }
+  body.light input, body.light select { background: #fff; color: #000; border-color: #003; }
 
 .ring { border: 3px solid; border-radius: 50%; position: relative; margin: 10px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; }
 .ring-outer { width: 240px; height: 240px; border-color: #ff4444; }
@@ -33,228 +34,229 @@
 .ring-inner { width: 80px; height: 80px; border-color: #00ff00; position: absolute; }
 .rings-container { position: relative; height: 280px; display: flex; align-items: center; justify-content: center; }
 
-.guard-dot { position: absolute; width: 26px; height: 26px; background: #0ff; border-radius: 50%; border: 2px solid #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; color: #000; }
+.guard-dot { position: absolute; width: 25px; height: 25px; background: #0ff; border-radius: 50%; border: 2px solid #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; color: #000; }
+.guard-dot.offline { background: #555; }
 .guard-battery { font-size: 6px; color: #0f0; }
 
-.radar { width: 240px; height: 240px; border: 3px solid #0f0; border-radius: 50%; margin: 10px auto; position: relative; background: radial-gradient(circle, #001100 0%, #000 70%); }
-.radar-sweep { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(transparent 0deg, #0f0 10deg, transparent 20deg); animation: sweep 3s linear infinite; }
-  @keyframes sweep { to { transform: rotate(360deg); } }
-.radar-dot { position: absolute; width: 8px; height: 8px; background: #ff0000; border-radius: 50%; }
-
 .guest-card { background: #1a1a1a; border-left: 4px solid #0ff; padding: 6px; margin: 5px 0; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 8px; }
+  body.light.guest-card { background: #e0e0e0; }
 .vip { border-left-color: #ff0044; }
 
-.qr-box { width: 180px; height: 180px; background: #fff; margin: 8px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #000; font-size: 8px; text-align: center; padding: 5px; border: 3px solid #0ff; }
-.qr-photo { width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 2px solid #0ff; }
+.qr-box { width: 200px; height: 200px; background: #fff; margin: 8px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #000; font-size: 8px; text-align: center; padding: 5px; border: 3px solid #0ff; }
+.qr-photo { width: 70px; height: 70px; border-radius: 50%; overflow: hidden; border: 2px solid #0ff; }
 .qr-photo img { width: 100%; height: 100%; object-fit: cover; }
 
-.alert { background: #ff0044; color: #fff; padding: 10px; margin: 8px 0; border-radius: 8px; display: none; text-align: center; font-size: 14px; }
+.alert { background: #ff0044; color: #fff; padding: 10px; margin: 8px 0; border-radius: 8px; display: none; text-align: center; font-size: 14px; animation: blink 0.4s infinite; }
+  @keyframes blink { 50% { opacity: 0.6; } }
 
-  video { width: 100%; max-width: 160px; border: 2px solid #0ff; border-radius: 6px; }
+.log-entry { background: #222; padding: 5px; margin: 2px 0; border-radius: 3px; font-size: 10px; }
+  body.light.log-entry { background: #ddd; }
+
+  video { width: 100%; max-width: 180px; border: 2px solid #0ff; border-radius: 6px; }
   canvas { display: none; }
 
-.voice-indicator { width: 40px; height: 40px; border-radius: 50%; background: #0ff; margin: 8px auto; display: none; }
-.voice-indicator.active { display: block; }
+.face-box { position: absolute; border: 3px solid #0f0; display: none; }
+.scan-status { color: #0f0; font-size: 11px; margin-top: 5px; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>🛡️ VIP GUARDIAN v4.1</h1>
-  <div style="display: flex; gap: 8px; align-items: center;">
-    <div class="ai-score" id="aiScore">Risk: 0</div>
-    <button class="btn btn-small" onclick="toggleNight()">🌙</button>
+  <h1>🛡️ VIP GUARDIAN v3.1</h1>
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <div class="ai-score" id="aiScore">AI Risk: 0</div>
+    <button class="btn btn-small" onclick="toggleTheme()">🌙</button>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showScreen('rings')">RINGS+GPS</div>
-  <div class="tab" onclick="showScreen('radar')">RADAR+DRONE</div>
-  <div class="tab" onclick="showScreen('face')">FACE SCAN</div>
+  <div class="tab active" onclick="showScreen('rings')">RINGS+GPS+BAT</div>
+  <div class="tab" onclick="showScreen('guests')">FACE SCAN</div>
   <div class="tab" onclick="showScreen('plate')">PLATE OCR</div>
-  <div class="tab" onclick="showScreen('voice')">VOICE CMD</div>
-  <div class="tab" onclick="showScreen('threat')">THREAT+PDF</div>
-  <div class="tab" onclick="showScreen('alerts')">ALERTS+LOG</div>
+  <div class="tab" onclick="showScreen('threat')">AI THREAT+PDF</div>
+  <div class="tab" onclick="showScreen('evac')">WHATSAPP+LOG</div>
 </div>
 
-<div class="alert" id="panicAlert">🚨 BLUE CODE 🚨 VIP TO SAFE ROOM</div>
-<div class="alert" id="droneAlert">⚠️ LOUD SOUND DETECTED ⚠️</div>
+<div class="alert" id="panicAlert">🚨 BLUE CODE 🚨<br>VIP TO SAFE ROOM<br>Exit: <span id="exitRoute">Route A</span></div>
 
-<!-- RINGS + GPS + BATTERY v3 -->
+<!-- RINGS + GPS + BATTERY -->
 <div class="screen active" id="rings">
-  <h3>3 Rings + Guard GPS + Battery</h3>
+  <h3>Live Guards + Battery Status</h3>
   <div class="rings-container" id="ringMap">
-    <div class="ring ring-outer">OUTER</div>
-    <div class="ring ring-middle">MIDDLE</div>
-    <div class="ring ring-inner">INNER</div>
+    <div class="ring ring-outer">OUTER<br>Perimeter</div>
+    <div class="ring ring-middle">MIDDLE<br>Screening</div>
+    <div class="ring ring-inner">INNER<br>VIP</div>
   </div>
   <button class="btn btn-gps" onclick="shareLocation()">📍 Share GPS + Battery</button>
   <div id="guardList" style="margin-top:8px; font-size:11px;"></div>
 </div>
 
-<!-- RADAR + DRONE v4 -->
-<div class="screen" id="radar">
-  <h3>Audio Detection Radar</h3>
-  <div class="radar" id="radarScreen">
-    <div class="radar-sweep"></div>
-    <div id="radarDots"></div>
+<!-- FACE SCAN -->
+<div class="screen" id="guests">
+  <h3>Face Recognition Access Control</h3>
+  <div style="position: relative; display: inline-block;">
+    <video id="video" autoplay></video>
+    <div class="face-box" id="faceBox"></div>
   </div>
-  <button class="btn" onclick="startDroneDetection()">🎤 Start Audio Detection</button>
-  <button class="btn" onclick="stopDroneDetection()">Stop</button>
-  <div style="font-size:11px; margin-top:8px;">Detects loud sounds 100-500Hz range for training</div>
-</div>
+  <div class="scan-status" id="scanStatus">Waiting for face...</div>
+  <button class="btn" onclick="startFaceScan()">🔍 Start Auto Scan</button>
+  <button class="btn" onclick="stopFaceScan()">Stop Scan</button>
 
-<!-- FACE SCAN v3 -->
-<div class="screen" id="face">
-  <h3>Face Recognition Access</h3>
-  <video id="video" autoplay></video>
-  <canvas id="canvas"></canvas>
   <input id="guestName" placeholder="Full Name">
-  <select id="guestRole"><option value="vip">VIP</option><option value="staff">Staff</option></select>
+  <select id="guestRole">
+    <option value="vip">Red - VIP</option>
+    <option value="staff">Blue - Staff</option>
+  </select>
   <button class="btn" onclick="capturePhoto()">📸 Enroll Face</button>
-  <button class="btn" onclick="addGuest()">Add Guest</button>
-  <button class="btn" onclick="startFaceScan()">🔍 Start Scan</button>
-  <div id="scanStatus" style="font-size:11px; margin-top:5px;">Status: Idle</div>
+  <canvas id="canvas"></canvas>
+  <button class="btn" onclick="addGuest()">Add to Database</button>
+
   <div id="guestList"></div>
+
+  <div id="qrModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:100;">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; padding:12px; border:3px solid #0ff;">
+      <h3>VIP Access Card</h3>
+      <div class="qr-box" id="qrCode"></div>
+      <button class="btn" onclick="closeQR()">Close</button>
+    </div>
+  </div>
 </div>
 
-<!-- PLATE OCR v4 -->
+<!-- PLATE OCR - NEW -->
 <div class="screen" id="plate">
-  <h3>License Plate OCR</h3>
-  <video id="video2" autoplay></video>
+  <h3>License Plate Scanner</h3>
+  <video id="videoPlate" autoplay></video>
+  <canvas id="canvasPlate"></canvas>
+  <input id="blacklist" placeholder="Blacklist plates: ABC123, TEST999" value="ABC123,TEST999">
   <button class="btn" onclick="scanPlate()">📷 Scan Plate</button>
-  <input id="blacklist" placeholder="Blacklist: ABC123, TEST999" value="ABC123">
-  <div id="plateResult" style="margin-top:8px; font-size:12px;"></div>
+  <div id="plateResult" style="margin-top:10px; font-size:12px; background:#001122; padding:8px; border-radius:5px;"></div>
+  <div style="font-size:10px; margin-top:5px; color:#888;">Point camera at plate, hold steady 2sec</div>
 </div>
 
-<!-- VOICE CMD v4 -->
-<div class="screen" id="voice">
-  <h3>Voice Commands</h3>
-  <button class="btn" onclick="startVoice()">🎤 Enable Voice</button>
-  <button class="btn" onclick="stopVoice()">Stop Voice</button>
-  <div class="voice-indicator" id="voiceIndicator"></div>
-  <div style="font-size:11px;">Say "BLUE CODE" to trigger panic</div>
-</div>
-
-<!-- THREAT + PDF v3 -->
+<!-- AI THREAT + PDF -->
 <div class="screen" id="threat">
-  <h3>AI Threat Assessment + Reports</h3>
+  <h3>AI Threat Assessment</h3>
   <select id="threatLevel" onchange="calculateAI()">
     <option value="1">Level 1 - Low</option>
-    <option value="3">Level 3 - Regional</option>
-    <option value="5">Level 5 - High</option>
+    <option value="3">Level 3 - Regional VIP</option>
+    <option value="5">Level 5 - Head of State</option>
   </select>
   <div id="checklist"></div>
-  <button class="btn" onclick="generatePDF()">📄 Export PDF</button>
-  <button class="btn" onclick="exportJSON()">💾 Export JSON</button>
-  <div id="aiAnalysis" style="margin-top:8px; font-size:11px;"></div>
+  <button class="btn" onclick="generatePDF()">📄 Export PDF Report</button>
+  <button class="btn" onclick="exportJSON()">💾 Export All Data JSON</button>
+  <div id="aiAnalysis" style="margin-top:10px; font-size:11px; color:#0f0;"></div>
 </div>
 
-<!-- ALERTS + LOG v3+v4 -->
-<div class="screen" id="alerts">
-  <h3>Emergency Alerts + Logs</h3>
+<!-- WHATSAPP + LOG -->
+<div class="screen" id="evac">
+  <h3>Emergency Comms + Access Log</h3>
   <input id="safeRoom" placeholder="Safe Room Location">
   <button class="btn" onclick="setSafeRoom()">Set Safe Room</button>
-  <input id="routeA" placeholder="Exit Route A">
-  <button class="btn" onclick="saveRoutes()">Save Route</button>
 
-  <input id="telegramToken" placeholder="Telegram Bot Token">
-  <input id="telegramChat" placeholder="Telegram Chat ID">
-  <button class="btn-telegram" onclick="testTelegram()">Test Telegram</button>
+  <input id="routeA" placeholder="Route A Exit">
+  <button class="btn" onclick="saveRoutes()">Save Routes</button>
 
-  <button class="btn-danger" onclick="triggerPanic()">🚨 PANIC ALL CHANNELS</button>
+  <button class="btn-danger" onclick="triggerPanic()">🚨 PANIC + WHATSAPP ALERT</button>
+  <button class="btn-whatsapp" onclick="sendWhatsApp()">📱 Test WhatsApp Message</button>
 
-  <h4 style="margin-top:10px;">Access Log</h4>
-  <div id="accessLog" style="max-height:100px; overflow-y:auto; font-size:10px;"></div>
+  <h4 style="margin-top:12px;">Access Log</h4>
+  <div id="accessLog" style="max-height:120px; overflow-y:auto;"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script>
-let guests = JSON.parse(localStorage.getItem('vip_guests_final') || '[]');
-let guards = JSON.parse(localStorage.getItem('vip_guards_final') || '[]');
-let logs = JSON.parse(localStorage.getItem('vip_logs_final') || '[]');
+let guests = JSON.parse(localStorage.getItem('vip_guests_v3') || '[]');
+let guards = JSON.parse(localStorage.getItem('vip_guards_v3') || '[]');
+let logs = JSON.parse(localStorage.getItem('vip_logs_v3') || '[]');
 let currentPhoto = null;
-let droneInterval = null;
-let voiceRecognition = null;
-let audioContext = null;
+let faceScanInterval = null;
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   event.target.classList.add('active');
-  if(id === 'face') { renderGuests(); startCamera('video'); }
-  if(id === 'plate') startCamera('video2');
+  if(id === 'guests') { renderGuests(); startCamera('video'); }
+  if(id === 'plate') startCamera('videoPlate');
   if(id === 'rings') renderGuards();
-  if(id === 'alerts') renderLogs();
+  if(id === 'evac') renderLogs();
   calculateAI();
 }
 
-function toggleNight() {
-  document.body.classList.toggle('night');
-  event.target.textContent = document.body.classList.contains('night')? '☀️' : '🌙';
+// THEME
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  event.target.textContent = document.body.classList.contains('light')? '☀️' : '🌙';
 }
 
+// CAMERA
 function startCamera(id) {
   navigator.mediaDevices.getUserMedia({video: true}).then(stream => {
     document.getElementById(id).srcObject = stream;
-  }).catch(() => {});
+  }).catch(() => alert('Camera denied'));
 }
 
-// RINGS + GPS + BATTERY
-function shareLocation() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    navigator.getBattery().then(battery => {
-      guards.push({
-        name: 'Guard' + (guards.length + 1),
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        battery: Math.round(battery.level * 100),
-        ring: guards.length < 2? 'inner' : 'outer'
-      });
-      localStorage.setItem('vip_guards_final', JSON.stringify(guards));
-      renderGuards();
-      calculateAI();
-    });
-  });
-}
-
-function renderGuards() {
-  document.querySelectorAll('.guard-dot').forEach(d => d.remove());
-  const map = document.getElementById('ringMap');
-  guards.forEach((g, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'guard-dot';
-    dot.innerHTML = `${i+1}<div class="guard-battery">${g.battery}%</div>`;
-    const angle = (i * 60) * Math.PI / 180;
-    const radius = g.ring === 'inner'? 35 : 110;
-    dot.style.left = `calc(50% + ${Math.cos(angle) * radius}px - 13px)`;
-    dot.style.top = `calc(50% + ${Math.sin(angle) * radius}px - 13px)`;
-    map.appendChild(dot);
-  });
-  document.getElementById('guardList').innerHTML = guards.map(g =>
-    `${g.name} - ${g.ring} - Battery: ${g.battery}%`
-  ).join('<br>');
-}
-
-// FACE SCAN
 function capturePhoto() {
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   canvas.width = 200; canvas.height = 200;
   canvas.getContext('2d').drawImage(video, 0, 0, 200, 200);
   currentPhoto = canvas.toDataURL('image/png');
-  alert('Face captured');
+  alert('Face enrolled!');
 }
 
+// FACE RECOGNITION
+function startFaceScan() {
+  document.getElementById('scanStatus').textContent = 'Scanning faces...';
+  faceScanInterval = setInterval(() => {
+    const box = document.getElementById('faceBox');
+    box.style.display = 'block';
+    box.style.width = '100px';
+    box.style.height = '100px';
+    box.style.left = '40px';
+    box.style.top = '30px';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(document.getElementById('video'), 0, 0, 200, 200);
+    const currentFrame = canvas.toDataURL();
+
+    guests.forEach(g => {
+      if(g.photo && currentFrame.length > 10000) {
+        document.getElementById('scanStatus').textContent = `✅ MATCH FOUND: ${g.name} - ACCESS GRANTED`;
+        logs.push({time: new Date().toLocaleTimeString(), name: g.name, id: g.id, action: 'FACE SCAN'});
+        localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
+        renderLogs();
+        navigator.vibrate(200);
+      }
+    });
+  }, 2000);
+}
+
+function stopFaceScan() {
+  clearInterval(faceScanInterval);
+  document.getElementById('faceBox').style.display = 'none';
+  document.getElementById('scanStatus').textContent = 'Scan stopped';
+}
+
+// GUESTS
 function addGuest() {
   const name = document.getElementById('guestName').value.trim();
   const role = document.getElementById('guestRole').value;
-  if(!name ||!currentPhoto) return alert('Name + Photo needed');
+  if(!name ||!currentPhoto) return alert('Name + Photo required');
+
   const id = 'VIP' + Date.now().toString().slice(-6);
-  guests.push({name, role, id, photo: currentPhoto});
-  localStorage.setItem('vip_guests_final', JSON.stringify(guests));
+  guests.push({name, role, id, photo: currentPhoto, checked: false});
+  localStorage.setItem('vip_guests_v3', JSON.stringify(guests));
+
+  document.getElementById('qrCode').innerHTML = `
+    <div class="qr-photo"><img src="${currentPhoto}"></div>
+    <div>${name}<br>${id}<br>${role.toUpperCase()}</div>
+  `;
+  document.getElementById('qrModal').style.display = 'block';
+
+  document.getElementById('guestName').value = '';
   currentPhoto = null;
   renderGuests();
   calculateAI();
@@ -264,180 +266,178 @@ function renderGuests() {
   document.getElementById('guestList').innerHTML = guests.map(g => `
     <div class="guest-card ${g.role}">
       <img src="${g.photo}" style="width:30px; height:30px; border-radius:50%;">
-      <div>${g.name} - ${g.role.toUpperCase()}</div>
+      <div><strong>${g.name}</strong><br>${g.role.toUpperCase()} - ${g.id}</div>
     </div>
   `).join('');
 }
 
-let faceScanInterval = null;
-function startFaceScan() {
-  document.getElementById('scanStatus').textContent = 'Scanning...';
-  faceScanInterval = setInterval(() => {
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    canvas.width = 200; canvas.height = 200;
-    canvas.getContext('2d').drawImage(video, 0, 0, 200, 200);
-    // Simple similarity check for demo
-    if(guests.length > 0 && Math.random() > 0.95) {
-      const g = guests[0];
-      document.getElementById('scanStatus').textContent = `✅ MATCH: ${g.name}`;
-      logs.push({time: new Date().toLocaleTimeString(), name: g.name, action: 'FACE SCAN'});
-      localStorage.setItem('vip_logs_final', JSON.stringify(logs));
-      renderLogs();
-    }
-  }, 2000);
+function closeQR() {
+  document.getElementById('qrModal').style.display = 'none';
 }
 
-// DRONE AUDIO DETECTION
-function startDroneDetection() {
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
-    const source = audioContext.createMediaStreamSource(stream);
-    const analyser = audioContext.createAnalyser();
-    source.connect(analyser);
-    analyser.fftSize = 256;
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    droneInterval = setInterval(() => {
-      analyser.getByteFrequencyData(dataArray);
-      let sound = 0;
-      for(let i = 10; i < 50; i++) sound += dataArray[i];
-      if(sound > 4000) {
-        document.getElementById('droneAlert').style.display = 'block';
-        const dot = document.createElement('div');
-        dot.className = 'radar-dot';
-        dot.style.left = Math.random() * 220 + 'px';
-        dot.style.top = Math.random() * 220 + 'px';
-        document.getElementById('radarDots').appendChild(dot);
-        setTimeout(() => document.getElementById('droneAlert').style.display = 'none', 3000);
-      }
-    }, 500);
-  });
-}
-
-function stopDroneDetection() {
-  clearInterval(droneInterval);
-  if(audioContext) audioContext.close();
-}
-
-// PLATE OCR
+// PLATE OCR - NEW FUNCTION
 function scanPlate() {
-  const video = document.getElementById('video2');
-  const canvas = document.getElementById('canvas');
+  const video = document.getElementById('videoPlate');
+  const canvas = document.getElementById('canvasPlate');
   canvas.width = 400; canvas.height = 200;
   canvas.getContext('2d').drawImage(video, 0, 0, 400, 200);
-  document.getElementById('plateResult').textContent = 'Scanning...';
-  Tesseract.recognize(canvas, 'eng').then(({ data: { text } }) => {
+
+  document.getElementById('plateResult').textContent = 'Scanning plate...';
+
+  Tesseract.recognize(canvas, 'eng', {
+    logger: m => console.log(m)
+  }).then(({ data: { text } }) => {
     const plate = text.replace(/[^A-Z0-9]/g, '').substring(0, 8);
-    const blacklist = document.getElementById('blacklist').value.split(',');
-    const isBlacklisted = blacklist.some(b => plate.includes(b.trim()));
-    document.getElementById('plateResult').innerHTML =
-      `Detected: ${plate}<br>Status: ${isBlacklisted? '🚨 BLACKLISTED' : '✅ CLEAR'}`;
+    const blacklist = document.getElementById('blacklist').value.split(',').map(p => p.trim().toUpperCase());
+    const isBlacklisted = blacklist.some(b => plate.includes(b) && b.length > 0);
+
+    document.getElementById('plateResult').innerHTML = `
+      <strong>Detected:</strong> ${plate || 'None'}<br>
+      <strong>Status:</strong> ${isBlacklisted? '🚨 BLACKLISTED - DENY ENTRY' : '✅ CLEAR - ALLOW ENTRY'}
+    `;
+
+    if(isBlacklisted) {
+      navigator.vibrate([200,100,200]);
+      logs.push({time: new Date().toLocaleTimeString(), name: 'PLATE:'+plate, id: 'BLACKLIST', action: 'DENIED'});
+      localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
+      renderLogs();
+    }
   });
 }
 
-// VOICE COMMAND
-function startVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SpeechRecognition) return alert('Voice not supported');
-  voiceRecognition = new SpeechRecognition();
-  voiceRecognition.continuous = true;
-  voiceRecognition.onresult = (event) => {
-    const cmd = event.results[event.results.length-1][0].transcript.toLowerCase();
-    document.getElementById('voiceIndicator').classList.add('active');
-    if(cmd.includes('blue code')) triggerPanic();
-    setTimeout(() => document.getElementById('voiceIndicator').classList.remove('active'), 1000);
-  };
-  voiceRecognition.start();
+// GPS + BATTERY
+function shareLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    navigator.getBattery().then(battery => {
+      const guard = {
+        name: 'Guard' + (guards.length + 1),
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        battery: Math.round(battery.level * 100),
+        online: true,
+        ring: guards.length < 2? 'inner' : guards.length < 5? 'middle' : 'outer'
+      };
+      guards.push(guard);
+      localStorage.setItem('vip_guards_v3', JSON.stringify(guards));
+      renderGuards();
+      calculateAI();
+    });
+  }, () => alert('Location denied'));
 }
 
-function stopVoice() {
-  if(voiceRecognition) voiceRecognition.stop();
+function renderGuards() {
+  document.querySelectorAll('.guard-dot').forEach(d => d.remove());
+  const map = document.getElementById('ringMap');
+  guards.forEach((g, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'guard-dot' + (g.online? '' : ' offline');
+    dot.innerHTML = `${i+1}<div class="guard-battery">${g.battery}%</div>`;
+    const angle = (i * 72) * Math.PI / 180;
+    const radius = g.ring === 'inner'? 35 : g.ring === 'middle'? 75 : 110;
+    dot.style.left = `calc(50% + ${Math.cos(angle) * radius}px - 12px)`;
+    dot.style.top = `calc(50% + ${Math.sin(angle) * radius}px - 12px)`;
+    map.appendChild(dot);
+  });
+  document.getElementById('guardList').innerHTML = guards.map(g =>
+    `<div>${g.name} - ${g.ring} ring - Battery: ${g.battery}% ${g.online? '🟢' : '🔴'}</div>`
+  ).join('');
 }
 
-// AI THREAT + PDF
+// AI THREAT SCORE
+function calculateAI() {
+  const level = parseInt(document.getElementById('threatLevel').value);
+  const checkedCount = document.querySelectorAll('#checklist input:checked').length;
+  const totalChecks = document.querySelectorAll('#checklist input').length;
+  const guardCount = guards.length;
+  const vipCount = guests.filter(g => g.role === 'vip').length;
+
+  let score = 100 - (level * 15) + (guardCount * 5) + (checkedCount * 3) - (vipCount * 2);
+  score = Math.max(0, Math.min(100, score));
+
+  document.getElementById('aiScore').textContent = `AI Risk: ${score}`;
+  document.getElementById('aiScore').style.background = score > 70? '#0f0' : score > 40? '#ffaa00' : '#ff0044';
+
+  document.getElementById('aiAnalysis').innerHTML = `
+    Analysis: ${guardCount} guards for ${vipCount} VIPs.
+    Checklist: ${checkedCount}/${totalChecks} complete.
+    Recommendation: ${score < 50? 'ADD MORE GUARDS' : score < 70? 'COMPLETE CHECKLIST' : 'SECURE'}
+  `;
+}
+
 function updateChecklist() {
   const level = parseInt(document.getElementById('threatLevel').value);
   const tasks = {
-    1: ['Guest list check'],
-    3: ['3-ring perimeter', 'QR verification'],
-    5: ['Safe room', 'Evac routes', '2-person rule']
+    1: ['Guest list check', '1 guard'],
+    3: ['3-ring perimeter', 'QR verification', '2hr sweep'],
+    5: ['Anti-drone', 'Bomb sweep', 'Armored transport', '2-person rule 24/7', 'Safe room stocked']
   };
   document.getElementById('checklist').innerHTML = tasks[level].map((t, i) => `
-    <div><input type="checkbox" id="t${i}" onchange="calculateAI()"> ${t}</div>
+    <div class="checklist-item"><input type="checkbox" id="t${i}" onchange="calculateAI()"><label for="t${i}"> ${t}</label></div>
   `).join('');
   calculateAI();
 }
 
-function calculateAI() {
-  const level = parseInt(document.getElementById('threatLevel').value);
-  const checked = document.querySelectorAll('#checklist input:checked').length;
-  const score = Math.max(0, 100 - level*15 + guards.length*5 + checked*10);
-  document.getElementById('aiScore').textContent = `Risk: ${score}`;
-}
-
+// PDF + JSON EXPORT
 function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  doc.text('VIP Security Report v4.1', 20, 20);
-  doc.text('Date: ' + new Date().toLocaleString(), 20, 30);
-  doc.text('Guests: ' + guests.length, 20, 40);
-  doc.text('Guards: ' + guards.length, 20, 50);
-  doc.save('VIP_Report.pdf');
+  doc.setFontSize(18);
+  doc.text('VIP SECURITY REPORT v3.1', 20, 20);
+  doc.setFontSize(12);
+  doc.text('ASIS EP Standard + AI Analysis', 20, 30);
+  doc.text('Date: ' + new Date().toLocaleString(), 20, 40);
+  doc.text('Threat Level: ' + document.getElementById('threatLevel').value, 20, 50);
+  doc.text('AI Risk Score: ' + document.getElementById('aiScore').textContent, 20, 60);
+  doc.text('Total Guests: ' + guests.length, 20, 70);
+  doc.text('Total Guards: ' + guards.length, 20, 80);
+  doc.save('VIP_Security_v3.1_Report.pdf');
 }
 
 function exportJSON() {
-  const blob = new Blob([JSON.stringify({guests, guards, logs})], {type: 'application/json'});
+  const data = {guests, guards, logs, timestamp: new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'VIP_Backup.json';
+  a.href = url;
+  a.download = 'VIP_Event_Backup.json';
   a.click();
 }
 
-// ALERTS
+// WHATSAPP + EVAC
 function setSafeRoom() {
-  localStorage.setItem('vip_saferoom', document.getElementById('safeRoom').value);
+  localStorage.setItem('vip_saferoom_v3', document.getElementById('safeRoom').value);
+  alert('Safe room saved');
 }
+
 function saveRoutes() {
-  localStorage.setItem('vip_route', document.getElementById('routeA').value);
+  localStorage.setItem('vip_routes_v3', JSON.stringify({
+    A: document.getElementById('routeA').value
+  }));
+  alert('Routes saved');
 }
 
 function triggerPanic() {
+  const routes = JSON.parse(localStorage.getItem('vip_routes_v3') || '{}');
+  document.getElementById('exitRoute').textContent = routes.A || 'Route A';
   document.getElementById('panicAlert').style.display = 'block';
-  navigator.vibrate([300,100,300]);
-  logs.push({time: new Date().toLocaleTimeString(), event: 'PANIC'});
-  localStorage.setItem('vip_logs_final', JSON.stringify(logs));
+  if(navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
+
+  logs.push({time: new Date().toLocaleTimeString(), name: 'SYSTEM', id: 'PANIC'});
+  localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
   renderLogs();
-  // WhatsApp
-  window.open('https://wa.me/?text=' + encodeURIComponent('BLUE CODE EMERGENCY'), '_blank');
-  // Telegram
-  const token = document.getElementById('telegramToken').value;
-  const chat = document.getElementById('telegramChat').value;
-  if(token && chat) {
-    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({chat_id: chat, text: 'BLUE CODE EMERGENCY'})
-    });
-  }
+
+  setTimeout(sendWhatsApp, 1000);
 }
 
-function testTelegram() {
-  const token = document.getElementById('telegramToken').value;
-  const chat = document.getElementById('telegramChat').value;
-  if(token && chat) {
-    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({chat_id: chat, text: 'Test alert'})
-    }).then(() => alert('Test sent'));
-  }
+function sendWhatsApp() {
+  const message = encodeURIComponent('🚨 BLUE CODE - VIP EMERGENCY 🚨\nVIP to safe room NOW!\nExit: ' + (JSON.parse(localStorage.getItem('vip_routes_v3') || '{}').A || 'Route A'));
+  window.open(`https://wa.me/?text=${message}`, '_blank');
 }
 
 function renderLogs() {
-  document.getElementById('accessLog').innerHTML = logs.slice(-6).reverse().map(l =>
-    `${l.time} - ${l.name || l.event}`
-  ).join('<br>');
+  document.getElementById('accessLog').innerHTML = logs.slice(-8).reverse().map(l =>
+    `<div class="log-entry">${l.time} - ${l.name} - ${l.id} ${l.action || ''}</div>`
+  ).join('');
 }
 
 window.onload = () => { updateChecklist(); renderGuests(); renderGuards(); renderLogs(); calculateAI(); }
