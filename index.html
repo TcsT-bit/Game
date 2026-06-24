@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v3.3 + No Match Alert</title>
+<title>VIP GUARDIAN v3.5 PRO - Real Face AI</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
-  body { background: #000; color: #0ff; overflow: hidden; transition: all 0.3s; }
+  body { background: #000; color: #0ff; overflow: hidden; }
   body.light { background: #f0f0f0; color: #003; }
 
 .header { background: linear-gradient(90deg, #001122, #004488); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; display: flex; justify-content: space-between; align-items: center; }
@@ -53,11 +53,14 @@
 .log-entry { background: #222; padding: 5px; margin: 2px 0; border-radius: 3px; font-size: 10px; }
   body.light.log-entry { background: #ddd; }
 
-  video { width: 100%; max-width: 180px; border: 2px solid #0ff; border-radius: 6px; }
-  canvas { display: none; }
+.video-container { position: relative; display: inline-block; }
+  video, canvas { border: 2px solid #0ff; border-radius: 6px; }
+  canvas { position: absolute; top: 0; left: 0; }
 
-.face-box { position: absolute; border: 3px solid #0f0; display: none; }
+.face-box { position: absolute; border: 3px solid #0f0; display: none; pointer-events: none; }
 .scan-status { color: #0f0; font-size: 11px; margin-top: 5px; }
+.similarity { font-size: 11px; color: #ffaa00; margin-top: 3px; }
+.loading { color: #ffaa00; font-size: 12px; }
 
 .reset-section { background: #220000; border: 2px solid #ff0044; padding: 10px; margin-top: 15px; border-radius: 8px; }
 .reset-warning { color: #ff6666; font-size: 10px; margin: 5px 0; }
@@ -66,7 +69,7 @@
 <body>
 
 <div class="header">
-  <h1>🛡️ VIP GUARDIAN v3.3</h1>
+  <h1>🛡️ VIP GUARDIAN v3.5 PRO</h1>
   <div style="display: flex; gap: 10px; align-items: center;">
     <div class="ai-score" id="aiScore">AI Risk: 0</div>
     <button class="btn btn-small" onclick="toggleTheme()">🌙</button>
@@ -75,7 +78,7 @@
 
 <div class="tabs">
   <div class="tab active" onclick="showScreen('rings')">RINGS+GPS+BAT</div>
-  <div class="tab" onclick="showScreen('guests')">FACE SCAN</div>
+  <div class="tab" onclick="showScreen('guests')">FACE AI PRO</div>
   <div class="tab" onclick="showScreen('plate')">PLATE OCR</div>
   <div class="tab" onclick="showScreen('threat')">AI THREAT+PDF</div>
   <div class="tab" onclick="showScreen('evac')">WHATSAPP+LOG</div>
@@ -95,15 +98,20 @@
   <div id="guardList" style="margin-top:8px; font-size:11px;"></div>
 </div>
 
-<!-- FACE SCAN -->
+<!-- FACE AI PRO -->
 <div class="screen" id="guests">
-  <h3>Face Recognition Access Control</h3>
-  <div style="position: relative; display: inline-block;">
-    <video id="video" autoplay></video>
-    <div class="face-box" id="faceBox"></div>
+  <h3>Real Face Recognition AI</h3>
+  <div class="loading" id="modelStatus">Loading AI models... 5sec</div>
+  
+  <div class="video-container">
+    <video id="video" width="200" height="200" autoplay muted></video>
+    <canvas id="overlay" width="200" height="200"></canvas>
   </div>
-  <div class="scan-status" id="scanStatus">Waiting for face...</div>
-  <button class="btn" onclick="startFaceScan()">🔍 Start Auto Scan</button>
+  
+  <div class="scan-status" id="scanStatus">Waiting for models...</div>
+  <div class="similarity" id="similarityScore"></div>
+  
+  <button class="btn" onclick="startFaceScan()" id="scanBtn" disabled>🔍 Start AI Scan</button>
   <button class="btn" onclick="stopFaceScan()">Stop Scan</button>
 
   <input id="guestName" placeholder="Full Name">
@@ -111,8 +119,7 @@
     <option value="vip">Red - VIP</option>
     <option value="staff">Blue - Staff</option>
   </select>
-  <button class="btn" onclick="capturePhoto()">📸 Enroll Face</button>
-  <canvas id="canvas"></canvas>
+  <button class="btn" onclick="capturePhoto()">📸 Enroll Face + Descriptor</button>
   <button class="btn" onclick="addGuest()">Add to Database</button>
 
   <div id="guestList"></div>
@@ -134,7 +141,6 @@
   <input id="blacklist" placeholder="Blacklist plates: ABC123, TEST999" value="ABC123,TEST999">
   <button class="btn" onclick="scanPlate()">📷 Scan Plate</button>
   <div id="plateResult" style="margin-top:10px; font-size:12px; background:#001122; padding:8px; border-radius:5px;"></div>
-  <div style="font-size:10px; margin-top:5px; color:#888;">Point camera at plate, hold steady 2sec</div>
 </div>
 
 <!-- AI THREAT + PDF -->
@@ -175,125 +181,179 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
 const RESET_PASSWORD = 'ADMIN123';
-let guests = JSON.parse(localStorage.getItem('vip_guests_v3') || '[]');
+let guests = JSON.parse(localStorage.getItem('vip_guests_v35') || '[]');
 let guards = JSON.parse(localStorage.getItem('vip_guards_v3') || '[]');
 let logs = JSON.parse(localStorage.getItem('vip_logs_v3') || '[]');
-let currentPhoto = null;
+let currentDescriptor = null;
 let faceScanInterval = null;
 let faceScanTimeout = null;
+let modelsLoaded = false;
+const FACE_MATCH_THRESHOLD = 0.6; // 0.4 = strict, 0.6 = normal, 0.8 = loose
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   event.target.classList.add('active');
-  if(id === 'guests') { renderGuests(); startCamera('video'); }
+  if(id === 'guests') { renderGuests(); startCamera(); }
   if(id === 'plate') startCamera('videoPlate');
   if(id === 'rings') renderGuards();
   if(id === 'evac') renderLogs();
   calculateAI();
 }
 
-// RESET EVENT FUNCTION
-function resetEvent() {
-  const password = prompt('🔒 ENTER ADMIN PASSWORD TO RESET EVENT:\nDefault: ADMIN123');
-  if(password === null) return;
-  if(password!== RESET_PASSWORD) {
-    alert('❌ WRONG PASSWORD - Reset cancelled');
-    return;
-  }
-  const confirm1 = confirm('⚠️ WARNING: This will delete ALL event data!\nGuests: ' + guests.length + '\nGuards: ' + guards.length + '\nLogs: ' + logs.length + '\n\nContinue?');
-  if(!confirm1) return;
-  const confirm2 = confirm('🚨 FINAL CONFIRMATION:\nThis action CANNOT be undone.\nType OK in next prompt to proceed.');
-  if(!confirm2) return;
-  const finalCheck = prompt('Type "OK" to confirm reset:');
-  if(finalCheck!== 'OK') {
-    alert('Reset cancelled');
-    return;
-  }
-  const resetLog = {time: new Date().toLocaleTimeString(), name: 'SYSTEM', id: 'RESET', action: 'EVENT RESET'};
-  localStorage.setItem('vip_logs_v3', JSON.stringify([resetLog]));
-  localStorage.removeItem('vip_guests_v3');
-  localStorage.removeItem('vip_guards_v3');
-  localStorage.removeItem('vip_logs_v3');
-  localStorage.removeItem('vip_saferoom_v3');
-  localStorage.removeItem('vip_routes_v3');
-  guests = []; guards = []; logs = [];
-  alert('✅ EVENT RESET COMPLETE\nAll data has been wiped.');
-  renderGuests(); renderGuards(); renderLogs(); calculateAI();
-}
-
-// THEME
-function toggleTheme() {
-  document.body.classList.toggle('light');
-  event.target.textContent = document.body.classList.contains('light')? '☀️' : '🌙';
+// LOAD FACE-API MODELS
+async function loadModels() {
+  const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+  await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+  await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+  await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+  modelsLoaded = true;
+  document.getElementById('modelStatus').textContent = '✅ AI Models Loaded - Ready';
+  document.getElementById('scanBtn').disabled = false;
+  document.getElementById('scanStatus').textContent = 'Ready to scan';
 }
 
 // CAMERA
-function startCamera(id) {
-  navigator.mediaDevices.getUserMedia({video: true}).then(stream => {
+async function startCamera(id = 'video') {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({video: {width: 200, height: 200}});
     document.getElementById(id).srcObject = stream;
-  }).catch(() => alert('Camera denied'));
+  } catch {
+    alert('Camera denied');
+  }
 }
 
-function capturePhoto() {
+// CAPTURE FACE + DESCRIPTOR
+async function capturePhoto() {
+  if(!modelsLoaded) return alert('AI models still loading...');
+  
   const video = document.getElementById('video');
+  const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks().withFaceDescriptor();
+  
+  if(!detection) return alert('No face detected! Look at camera.');
+  
+  currentDescriptor = Array.from(detection.descriptor);
+  alert(`Face captured! Descriptor saved. 128 numbers.`);
+}
+
+// ADD GUEST WITH DESCRIPTOR
+function addGuest() {
+  const name = document.getElementById('guestName').value.trim();
+  const role = document.getElementById('guestRole').value;
+  if(!name ||!currentDescriptor) return alert('Name + Face scan required');
+
+  const id = 'VIP' + Date.now().toString().slice(-6);
   const canvas = document.getElementById('canvas');
   canvas.width = 200; canvas.height = 200;
-  canvas.getContext('2d').drawImage(video, 0, 0, 200, 200);
-  currentPhoto = canvas.toDataURL('image/png');
-  alert('Face enrolled!');
+  canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 200, 200);
+  const photo = canvas.toDataURL('image/png');
+
+  guests.push({name, role, id, photo, descriptor: currentDescriptor});
+  localStorage.setItem('vip_guests_v35', JSON.stringify(guests));
+
+  document.getElementById('qrCode').innerHTML = `
+    <div class="qr-photo"><img src="${photo}"></div>
+    <div>${name}<br>${id}<br>${role.toUpperCase()}</div>
+  `;
+  document.getElementById('qrModal').style.display = 'block';
+
+  document.getElementById('guestName').value = '';
+  currentDescriptor = null;
+  renderGuests();
+  calculateAI();
 }
 
-// FACE RECOGNITION WITH 5SEC NO MATCH ALERT
-function startFaceScan() {
-  document.getElementById('scanStatus').textContent = 'Scanning faces... 5sec timeout';
-  document.getElementById('faceBox').style.display = 'block';
-  document.getElementById('faceBox').style.width = '100px';
-  document.getElementById('faceBox').style.height = '100px';
-  document.getElementById('faceBox').style.left = '40px';
-  document.getElementById('faceBox').style.top = '30px';
+// REAL FACE SCAN WITH DESCRIPTOR MATCHING
+async function startFaceScan() {
+  if(!modelsLoaded) return alert('AI models loading...');
+  if(guests.length === 0) return alert('No guests enrolled!');
+
+  document.getElementById('scanStatus').textContent = 'AI Scanning... 5sec timeout';
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0, 0, 200, 200);
 
   let matchFound = false;
 
-  // Main scan interval - checks every 2sec
-  faceScanInterval = setInterval(() => {
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(document.getElementById('video'), 0, 0, 200, 200);
-    const currentFrame = canvas.toDataURL();
+  faceScanInterval = setInterval(async () => {
+    const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks().withFaceDescriptor();
+    
+    ctx.clearRect(0, 0, 200, 200);
 
-    guests.forEach(g => {
-      if(g.photo && currentFrame.length > 10000 &&!matchFound) {
+    if(detection) {
+      const resized = faceapi.resizeResults(detection, {width: 200, height: 200});
+      const box = resized.detection.box;
+      
+      // Draw face box
+      ctx.strokeStyle = '#0f0';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+      
+      // Compare with all enrolled guests
+      let bestMatch = null;
+      let bestDistance = 999;
+
+      for(let g of guests) {
+        if(!g.descriptor) continue;
+        const distance = faceapi.euclideanDistance(
+          detection.descriptor,
+          new Float32Array(g.descriptor)
+        );
+        
+        if(distance < bestDistance) {
+          bestDistance = distance;
+          bestMatch = g;
+        }
+      }
+
+      const matchPercent = Math.max(0, 100 - (bestDistance * 100)).toFixed(0);
+      document.getElementById('similarityScore').textContent = 
+        bestMatch? `Best match: ${bestMatch.name} - ${matchPercent}%` : 'No match';
+
+      // If distance < 0.6 = match
+      if(bestDistance < FACE_MATCH_THRESHOLD && bestMatch &&!matchFound) {
         matchFound = true;
         clearInterval(faceScanInterval);
         clearTimeout(faceScanTimeout);
 
-        document.getElementById('scanStatus').textContent = `✅ MATCH FOUND: ${g.name} - ACCESS GRANTED`;
-        document.getElementById('faceBox').style.borderColor = '#0f0';
+        ctx.strokeStyle = '#0f0';
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+        ctx.fillStyle = '#0f0';
+        ctx.font = '12px Arial';
+        ctx.fillText(`${bestMatch.name} ${matchPercent}%`, box.x, box.y - 5);
 
-        logs.push({time: new Date().toLocaleTimeString(), name: g.name, id: g.id, action: 'FACE SCAN - GRANTED'});
+        document.getElementById('scanStatus').textContent = 
+          `✅ MATCH: ${bestMatch.name} - ${matchPercent}% ACCESS GRANTED`;
+
+        logs.push({time: new Date().toLocaleTimeString(), name: bestMatch.name, id: bestMatch.id, action: `FACE AI - GRANTED ${matchPercent}%`});
         localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
         renderLogs();
         navigator.vibrate(200);
 
-        setTimeout(() => stopFaceScan(), 2000);
+        setTimeout(() => stopFaceScan(), 3000);
       }
-    });
-  }, 2000);
+    }
+  }, 500);
 
-  // 5 second timeout - if no match found
+  // 5 second timeout
   faceScanTimeout = setTimeout(() => {
     if(!matchFound) {
       clearInterval(faceScanInterval);
       document.getElementById('scanStatus').textContent = '❌ NO MATCH - ACCESS DENIED';
-      document.getElementById('faceBox').style.borderColor = '#ff0044';
+      ctx.strokeStyle = '#ff0044';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(50, 50, 100, 100);
 
-      // Alert + Log unknown face
       alert('⚠️ UNKNOWN FACE DETECTED\nNo match in database after 5 seconds!');
-      logs.push({time: new Date().toLocaleTimeString(), name: 'UNKNOWN FACE', id: 'DENIED', action: 'FACE SCAN - DENIED'});
+      logs.push({time: new Date().toLocaleTimeString(), name: 'UNKNOWN FACE', id: 'DENIED', action: 'FACE AI - DENIED'});
       localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
       renderLogs();
       navigator.vibrate([100,100,100,100,200]);
@@ -306,35 +366,17 @@ function startFaceScan() {
 function stopFaceScan() {
   clearInterval(faceScanInterval);
   clearTimeout(faceScanTimeout);
-  document.getElementById('faceBox').style.display = 'none';
-  document.getElementById('faceBox').style.borderColor = '#0f0';
+  const ctx = document.getElementById('overlay').getContext('2d');
+  ctx.clearRect(0, 0, 200, 200);
   document.getElementById('scanStatus').textContent = 'Scan stopped';
-}
-
-// GUESTS
-function addGuest() {
-  const name = document.getElementById('guestName').value.trim();
-  const role = document.getElementById('guestRole').value;
-  if(!name ||!currentPhoto) return alert('Name + Photo required');
-  const id = 'VIP' + Date.now().toString().slice(-6);
-  guests.push({name, role, id, photo: currentPhoto, checked: false});
-  localStorage.setItem('vip_guests_v3', JSON.stringify(guests));
-  document.getElementById('qrCode').innerHTML = `
-    <div class="qr-photo"><img src="${currentPhoto}"></div>
-    <div>${name}<br>${id}<br>${role.toUpperCase()}</div>
-  `;
-  document.getElementById('qrModal').style.display = 'block';
-  document.getElementById('guestName').value = '';
-  currentPhoto = null;
-  renderGuests();
-  calculateAI();
+  document.getElementById('similarityScore').textContent = '';
 }
 
 function renderGuests() {
   document.getElementById('guestList').innerHTML = guests.map(g => `
     <div class="guest-card ${g.role}">
       <img src="${g.photo}" style="width:30px; height:30px; border-radius:50%;">
-      <div><strong>${g.name}</strong><br>${g.role.toUpperCase()} - ${g.id}</div>
+      <div><strong>${g.name}</strong><br>${g.role.toUpperCase()} - AI Descriptor</div>
     </div>
   `).join('');
 }
@@ -343,16 +385,32 @@ function closeQR() {
   document.getElementById('qrModal').style.display = 'none';
 }
 
-// PLATE OCR
+// RESET EVENT
+function resetEvent() {
+  const password = prompt('🔒 ENTER ADMIN PASSWORD:\nDefault: ADMIN123');
+  if(password!== RESET_PASSWORD) return alert('❌ WRONG PASSWORD');
+  if(!confirm('Delete ALL data?')) return;
+  if(prompt('Type OK to confirm:')!== 'OK') return alert('Cancelled');
+  
+  localStorage.clear();
+  guests = []; guards = []; logs = [];
+  alert('✅ RESET COMPLETE');
+  renderGuests(); renderGuards(); renderLogs(); calculateAI();
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  event.target.textContent = document.body.classList.contains('light')? '☀️' : '🌙';
+}
+
+// Rest of your functions: scanPlate, shareLocation, renderGuards, calculateAI, updateChecklist, generatePDF, exportJSON, setSafeRoom, saveRoutes, triggerPanic, sendWhatsApp, renderLogs
 function scanPlate() {
   const video = document.getElementById('videoPlate');
   const canvas = document.getElementById('canvasPlate');
   canvas.width = 400; canvas.height = 200;
   canvas.getContext('2d').drawImage(video, 0, 0, 400, 200);
   document.getElementById('plateResult').textContent = 'Scanning plate...';
-  Tesseract.recognize(canvas, 'eng', {
-    logger: m => console.log(m)
-  }).then(({ data: { text } }) => {
+  Tesseract.recognize(canvas, 'eng').then(({ data: { text } }) => {
     const plate = text.replace(/[^A-Z0-9]/g, '').substring(0, 8);
     const blacklist = document.getElementById('blacklist').value.split(',').map(p => p.trim().toUpperCase());
     const isBlacklisted = blacklist.some(b => plate.includes(b) && b.length > 0);
@@ -369,7 +427,6 @@ function scanPlate() {
   });
 }
 
-// GPS + BATTERY
 function shareLocation() {
   navigator.geolocation.getCurrentPosition(pos => {
     navigator.getBattery().then(battery => {
@@ -407,7 +464,6 @@ function renderGuards() {
   ).join('');
 }
 
-// AI THREAT SCORE
 function calculateAI() {
   const level = parseInt(document.getElementById('threatLevel').value);
   const checkedCount = document.querySelectorAll('#checklist input:checked').length;
@@ -438,20 +494,19 @@ function updateChecklist() {
   calculateAI();
 }
 
-// PDF + JSON EXPORT
 function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.setFontSize(18);
-  doc.text('VIP SECURITY REPORT v3.3', 20, 20);
+  doc.text('VIP SECURITY REPORT v3.5 PRO', 20, 20);
   doc.setFontSize(12);
-  doc.text('ASIS EP Standard + AI Analysis', 20, 30);
+  doc.text('ASIS EP Standard + Real Face AI', 20, 30);
   doc.text('Date: ' + new Date().toLocaleString(), 20, 40);
   doc.text('Threat Level: ' + document.getElementById('threatLevel').value, 20, 50);
   doc.text('AI Risk Score: ' + document.getElementById('aiScore').textContent, 20, 60);
   doc.text('Total Guests: ' + guests.length, 20, 70);
   doc.text('Total Guards: ' + guards.length, 20, 80);
-  doc.save('VIP_Security_v3.3_Report.pdf');
+  doc.save('VIP_Security_v3.5_Report.pdf');
 }
 
 function exportJSON() {
@@ -464,7 +519,6 @@ function exportJSON() {
   a.click();
 }
 
-// WHATSAPP + EVAC
 function setSafeRoom() {
   localStorage.setItem('vip_saferoom_v3', document.getElementById('safeRoom').value);
   alert('Safe room saved');
@@ -499,7 +553,14 @@ function renderLogs() {
   ).join('');
 }
 
-window.onload = () => { updateChecklist(); renderGuests(); renderGuards(); renderLogs(); calculateAI(); }
+window.onload = async () => { 
+  updateChecklist(); 
+  renderGuests(); 
+  renderGuards(); 
+  renderLogs(); 
+  calculateAI(); 
+  await loadModels();
+}
 </script>
 </body>
 </html>
