@@ -3,233 +3,286 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>NIGHT CITY RACER</title>
+<title>VIP GUARDIAN - ASIS EP Standard</title>
 <style>
-    * { margin: 0; padding: 0; user-select: none; }
-  body { background: #000; overflow: hidden; font-family: Arial Black; }
-  canvas { display: block; width: 100vw; height: 100vh; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial Black', sans-serif; }
+  body { background: #0a0a0a; color: #0ff; overflow: hidden; }
 
-  .hud { position: absolute; bottom: 30px; left: 30px; color: #0ff; font-size: 24px; text-shadow: 0 0 10px #0ff; }
-  .speed { font-size: 60px; font-weight: bold; }
-  .money { position: absolute; top: 30px; right: 30px; color: #ff0; font-size: 28px; text-shadow: 0 0 10px #ff0; }
-  .heat { position: absolute; top: 70px; right: 30px; color: #f00; font-size: 22px; }
-  .car-name { position: absolute; bottom: 30px; right: 30px; color: #fff; font-size: 22px; text-align: right; }
+ .header { background: linear-gradient(90deg, #001122, #002244); padding: 15px; text-align: center; border-bottom: 3px solid #0ff; }
+ .header h1 { font-size: 22px; text-shadow: 0 0 10px #0ff; }
 
-  .minimap { position: absolute; top: 30px; left: 30px; width: 200px; height: 200px; background: rgba(0,0,0,0.7); border: 3px solid #0ff; border-radius: 50%; }
-  .player-dot { position: absolute; width: 8px; height: 8px; background: #0ff; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 10px #0ff; }
+ .tabs { display: flex; background: #111; border-bottom: 2px solid #0ff; }
+ .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; background: #1a1a1a; border-right: 1px solid #333; }
+ .tab.active { background: #0ff; color: #000; }
 
-  .start { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; text-align: center; background: rgba(0,0,0,0.9); padding: 40px; border: 4px solid #0ff; }
-  .start h1 { font-size: 50px; color: #0ff; margin-bottom: 20px; text-shadow: 0 0 20px #0ff; }
+ .screen { display: none; padding: 15px; height: calc(100vh - 120px); overflow-y: auto; }
+ .screen.active { display: block; }
 
-  .mobile-btn { position: absolute; bottom: 100px; width: 80px; height: 80px; background: rgba(0,255,255,0.3); border: 3px solid #0ff; border-radius: 50%; font-size: 30px; color: #fff; display: none; }
-  #btn-left { left: 50px; } #btn-right { right: 50px; } #btn-nitro { right: 150px; bottom: 200px; }
-  @media (max-width: 800px) { .mobile-btn { display: block; } }
+ .ring { border: 3px solid; border-radius: 50%; position: relative; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+ .ring-outer { width: 280px; height: 280px; border-color: #ff4444; }
+ .ring-middle { width: 180px; height: 180px; border-color: #ffaa00; position: absolute; }
+ .ring-inner { width: 100px; height: 100px; border-color: #00ff00; position: absolute; }
+ .rings-container { position: relative; height: 320px; display: flex; align-items: center; justify-content: center; }
 
-  .crack { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"><path d="M0,0 L100,100 M50,0 L150,100" stroke="white" stroke-width="2" opacity="0.3"/></svg>'); pointer-events: none; opacity: 0; }
+ .btn { background: #0ff; color: #000; border: none; padding: 12px 20px; margin: 8px 5px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
+ .btn-danger { background: #ff0044; color: #fff; font-size: 18px; padding: 20px; width: 100%; }
+ .btn-small { padding: 6px 12px; font-size: 12px; }
+
+  input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #222; border: 2px solid #0ff; color: #0ff; border-radius: 5px; }
+
+ .guest-card { background: #1a1a1a; border-left: 4px solid #0ff; padding: 10px; margin: 8px 0; border-radius: 5px; }
+ .vip { border-left-color: #ff0044; }
+ .staff { border-left-color: #0088ff; }
+ .media { border-left-color: #00ff88; }
+
+ .qr-box { width: 150px; height: 150px; background: #fff; margin: 15px auto; display: flex; align-items: center; justify-content: center; color: #000; font-size: 10px; text-align: center; }
+
+ .checklist-item { background: #222; padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; align-items: center; }
+ .checklist-item input { width: auto; margin-right: 10px; }
+
+ .alert { background: #ff0044; color: #fff; padding: 15px; margin: 10px 0; border-radius: 8px; display: none; text-align: center; font-size: 18px; }
+
+ .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  @media (max-width: 600px) {.grid { grid-template-columns: 1fr; }.ring-outer { width: 240px; height: 240px; } }
 </style>
 </head>
 <body>
-<div class="minimap"><div class="player-dot"></div></div>
-<div class="hud"><div class="speed"><span id="speed">0</span> KM/H</div>NITRO: <span id="nitro">100</span>%</div>
-<div class="money">$<span id="money">5000</span></div>
-<div class="heat" id="heat"></div>
-<div class="car-name"><span id="carname">SUPRA</span><br><span style="font-size:14px">1-5 Switch Car | U Upgrade | T Change City</span></div>
-<div class="crack" id="crack"></div>
 
-<button class="mobile-btn" id="btn-left">◀</button>
-<button class="mobile-btn" id="btn-right">▶</button>
-<button class="mobile-btn" id="btn-nitro">N2O</button>
-
-<div class="start" id="start">
-  <h1>NIGHT CITY RACER</h1>
-  <p>WASD Drive | Shift Nitro | Space Drift | 1-5 Cars</p>
-  <p>T = Teleport Cities | U = Upgrade Car | Find BLUE markers for races</p>
-  <p style="color:#f00">Don't crash too hard or police will chase you!</p>
-  <p>Click to Start</p>
+<div class="header">
+  <h1>🛡️ VIP GUARDIAN v1.0</h1>
+  <div style="font-size: 12px;">ASIS Executive Protection Standard Compliant</div>
 </div>
 
-<canvas id="c"></canvas>
+<div class="tabs">
+  <div class="tab active" onclick="showScreen('rings')">RINGS</div>
+  <div class="tab" onclick="showScreen('guests')">GUESTS</div>
+  <div class="tab" onclick="showScreen('threat')">THREAT</div>
+  <div class="tab" onclick="showScreen('evac')">EVAC</div>
+</div>
 
-<script type="importmap">
-{"imports": {"three": "https://unpkg.com/three@0.160.0/build/three.module.js"}}
-</script>
+<div class="alert" id="panicAlert">🚨 BLUE CODE ACTIVE 🚨<br>VIP TO SAFE ROOM NOW<br>Exit: <span id="exitRoute">Route A</span></div>
 
-<script type="module">
-import * as THREE from 'three';
+<!-- RINGS SCREEN -->
+<div class="screen active" id="rings">
+  <h3>3 Concentric Security Rings</h3>
+  <div class="rings-container">
+    <div class="ring ring-outer">OUTER<br>Perimeter<br>Police/Roadblocks</div>
+    <div class="ring ring-middle">MIDDLE<br>Screening<br>Metal/Bags</div>
+    <div class="ring ring-inner">INNER<br>VIP Zone<br>PPO Only</div>
+  </div>
+  <div class="grid">
+    <div>
+      <h4>2-Person Rule Status</h4>
+      <div class="guest-card">VIP: <span id="vipStatus">Unassigned</span></div>
+      <div class="guest-card">PPO: <span id="ppoStatus">Unassigned</span></div>
+      <div class="guest-card">Escort: <span id="escortStatus">0/3</span></div>
+    </div>
+    <div>
+      <h4>Advance Team</h4>
+      <button class="btn btn-small" onclick="startAdvance()">Start 4hr Sweep</button>
+      <div id="sweepProgress">Not Started</div>
+    </div>
+  </div>
+</div>
 
-// SCENE SETUP
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+<!-- GUESTS SCREEN -->
+<div class="screen" id="guests">
+  <h3>Guest List + QR Access Control</h3>
+  <input id="guestName" placeholder="Guest Full Name">
+  <select id="guestRole">
+    <option value="vip">Red - VIP</option>
+    <option value="staff">Blue - Staff</option>
+    <option value="media">Green - Media</option>
+  </select>
+  <button class="btn" onclick="addGuest()">Add + Generate QR</button>
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(50, 100, 50);
-scene.add(sun);
+  <div id="guestList"></div>
 
-// CARS COLLECTION - 5 different cars
-const cars = {
-  supra: { color: 0xff3300, speed: 0.18, handling: 0.03, name: 'TOYOTA SUPRA' },
-  gtr: { color: 0x111, speed: 0.20, handling: 0.025, name: 'NISSAN GTR' },
-  mustang: { color: 0x0066ff, speed: 0.17, handling: 0.035, name: 'MUSTANG GT' },
-  rx7: { color: 0xffff00, speed: 0.19, handling: 0.04, name: 'MAZDA RX-7' },
-  lambo: { color: 0xffcc00, speed: 0.22, handling: 0.02, name: 'LAMBORGHINI' }
-};
-let currentCar = 'supra';
-let carUpgrades = { speed: 0, handling: 0 };
+  <div id="qrModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100;">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; padding:20px; border:3px solid #0ff;">
+      <h3>VIP Wristband QR</h3>
+      <div class="qr-box" id="qrCode">QR CODE<br><span id="qrText"></span></div>
+      <button class="btn" onclick="scanQR()">Simulate Scan</button>
+      <button class="btn" onclick="closeQR()">Close</button>
+    </div>
+  </div>
+</div>
 
-// PLAYER CAR
-const carGroup = new THREE.Group();
-const body = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4), new THREE.MeshStandardMaterial({ color: cars[currentCar].color, metalness: 0.8 }));
-body.position.y = 0.4;
-carGroup.add(body);
-const roof = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, 2), new THREE.MeshStandardMaterial({ color: 0x111 }));
-roof.position.y = 0.7;
-carGroup.add(roof);
-scene.add(carGroup);
+<!-- THREAT SCREEN -->
+<div class="screen" id="threat">
+  <h3>Threat Assessment - ASIS Standard</h3>
+  <select id="threatLevel" onchange="updateChecklist()">
+    <option value="1">Level 1 - Low Profile Event</option>
+    <option value="2">Level 2 - Local VIP</option>
+    <option value="3">Level 3 - Regional Celebrity</option>
+    <option value="4">Level 4 - National Figure</option>
+    <option value="5">Level 5 - Head of State</option>
+  </select>
 
-// 3 CITIES MAP
-let city = 'downtown';
-let buildings = [];
-function generateCity(type) {
-  buildings.forEach(b => scene.remove(b));
-  buildings = [];
-  const count = type === 'downtown'? 80 : type === 'industrial'? 40 : 60;
-  for(let i=0; i<count; i++) {
-    const h = type === 'downtown'? 20+Math.random()*60 : 8+Math.random()*15;
-    const b = new THREE.Mesh(
-      new THREE.BoxGeometry(8+Math.random()*10, h, 8+Math.random()*10),
-      new THREE.MeshStandardMaterial({ 
-        color: type==='downtown'?0x333:type==='industrial'?0x444:0x555,
-        emissive: Math.random()>0.7?0x00ffff:0x000 
-      })
-    );
-    b.position.set((Math.random()-0.5)*300, h/2, (Math.random()-0.5)*300);
-    scene.add(b);
-    buildings.push(b);
+  <h4>Security Checklist</h4>
+  <div id="checklist"></div>
+
+  <button class="btn" onclick="saveAssessment()">Save Assessment</button>
+  <div id="savedStatus" style="margin-top:10px; color:#0f0;"></div>
+</div>
+
+<!-- EVAC SCREEN -->
+<div class="screen" id="evac">
+  <h3>Safe Room + Evacuation Routes</h3>
+  <input id="safeRoom" placeholder="Safe Room Location e.g. Room B12">
+  <button class="btn" onclick="setSafeRoom()">Set Safe Room</button>
+
+  <h4 style="margin-top:20px;">Evac Routes</h4>
+  <input id="routeA" placeholder="Route A: North Exit">
+  <input id="routeB" placeholder="Route B: Kitchen Exit">
+  <input id="routeC" placeholder="Route C: Parking Garage">
+  <button class="btn" onclick="saveRoutes()">Save Routes</button>
+
+  <button class="btn-danger" onclick="triggerPanic()">🚨 PANIC BUTTON 🚨</button>
+  <button class="btn" onclick="clearPanic()" style="background:#0f0;">Clear Alert</button>
+</div>
+
+<script>
+let guests = JSON.parse(localStorage.getItem('vip_guests') || '[]');
+let currentQR = null;
+let threatData = JSON.parse(localStorage.getItem('vip_threat') || '{}');
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if(id === 'guests') renderGuests();
+  if(id === 'threat') updateChecklist();
+}
+
+function addGuest() {
+  const name = document.getElementById('guestName').value.trim();
+  const role = document.getElementById('guestRole').value;
+  if(!name) return alert('Enter name');
+
+  const id = 'VIP' + Date.now().toString().slice(-6);
+  guests.push({name, role, id, checked: false});
+  localStorage.setItem('vip_guests', JSON.stringify(guests));
+
+  currentQR = id;
+  document.getElementById('qrText').textContent = name + '\n' + id + '\nRole: ' + role.toUpperCase();
+  document.getElementById('qrModal').style.display = 'block';
+
+  document.getElementById('guestName').value = '';
+  renderGuests();
+}
+
+function renderGuests() {
+  const list = document.getElementById('guestList');
+  list.innerHTML = guests.map(g => `
+    <div class="guest-card ${g.role}">
+      <strong>${g.name}</strong> - ${g.role.toUpperCase()}<br>
+      ID: ${g.id} ${g.checked? '✅ CHECKED IN' : ''}
+      <button class="btn-small" onclick="deleteGuest('${g.id}')">Delete</button>
+    </div>
+  `).join('');
+
+  // Update 2-person rule
+  const vips = guests.filter(g => g.role === 'vip').length;
+  document.getElementById('vipStatus').textContent = vips > 0? vips + ' VIP(s) Assigned' : 'Unassigned';
+}
+
+function deleteGuest(id) {
+  guests = guests.filter(g => g.id!== id);
+  localStorage.setItem('vip_guests', JSON.stringify(guests));
+  renderGuests();
+}
+
+function scanQR() {
+  const guest = guests.find(g => g.id === currentQR);
+  if(guest) {
+    guest.checked = true;
+    localStorage.setItem('vip_guests', JSON.stringify(guests));
+    alert('✅ ACCESS GRANTED\n' + guest.name + ' - ' + guest.role.toUpperCase());
+    closeQR();
+    renderGuests();
   }
 }
-generateCity('downtown');
 
-// ROAD
-const road = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ color: 0x222 }));
-road.rotation.x = -Math.PI/2;
-scene.add(road);
-
-// GAME STATE
-let player = { pos: new THREE.Vector3(0, 0.5, 0), rot: 0, vel: 0, nitro: 100, money: 5000, heat: 0, damage: 0 };
-let keys = {};
-let started = false;
-
-// CONTROLS
-document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-document.addEventListener('click', () => { if(!started) { started = true; document.getElementById('start').style.display = 'none'; } });
-
-// MOBILE BUTTONS
-['btn-left','btn-right','btn-nitro'].forEach(id => {
-  const btn = document.getElementById(id);
-  btn.addEventListener('touchstart', () => keys[id==='btn-left'?'a':id==='btn-right'?'d':'shift'] = true);
-  btn.addEventListener('touchend', () => keys[id==='btn-left'?'a':id==='btn-right'?'d':'shift'] = false);
-});
-
-// GAME LOOP
-function animate() {
-  requestAnimationFrame(animate);
-  if(!started) { renderer.render(scene, camera); return; }
-
-  const car = cars[currentCar];
-  const speed = car.speed + carUpgrades.speed*0.02;
-  const handling = car.handling + carUpgrades.handling*0.01;
-
-  // CONTROLS
-  if(keys['w']) player.vel = Math.min(player.vel + 0.01, speed);
-  else player.vel *= 0.98;
-  if(keys['s']) player.vel = Math.max(player.vel - 0.02, -speed*0.5);
-  if(keys['a']) player.rot += handling * player.vel * 30;
-  if(keys['d']) player.rot -= handling * player.vel * 30;
-
-  // NITRO
-  if(keys['shift'] && player.nitro > 0 && player.vel > 0.1) {
-    player.vel *= 1.02;
-    player.nitro -= 0.5;
-  } else if(player.nitro < 100) player.nitro += 0.2;
-
-  // DRIFT SMOKE
-  if(keys[' '] && Math.abs(player.rot) > 0.02) {
-    const smoke = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial({ color: 0x888, transparent: true, opacity: 0.4 }));
-    smoke.position.set(carGroup.position.x, 0.2, carGroup.position.z);
-    scene.add(smoke);
-    setTimeout(() => scene.remove(smoke), 300);
-  }
-
-  // MOVE
-  player.pos.x += Math.sin(player.rot) * player.vel;
-  player.pos.z += Math.cos(player.rot) * player.vel;
-
-  // CAR SWITCH 1-5
-  if(keys['1']) currentCar = 'supra';
-  if(keys['2']) currentCar = 'gtr';
-  if(keys['3']) currentCar = 'mustang';
-  if(keys['4']) currentCar = 'rx7';
-  if(keys['5']) currentCar = 'lambo';
-  body.material.color.setHex(cars[currentCar].color);
-  document.getElementById('carname').textContent = cars[currentCar].name;
-
-  // CHANGE CITY T
-  if(keys['t']) {
-    city = city === 'downtown'? 'industrial' : city === 'industrial'? 'harbor' : 'downtown';
-    generateCity(city);
-    keys['t'] = false;
-  }
-
-  // UPGRADE U
-  if(keys['u'] && player.money >= 2000) {
-    player.money -= 2000;
-    carUpgrades.speed += 1;
-    keys['u'] = false;
-  }
-
-  // POLICE HEAT
-  if(player.vel > 0.15) player.heat = Math.min(player.heat + 0.1, 5);
-  else player.heat = Math.max(player.heat - 0.05, 0);
-
-  // CRASH DAMAGE
-  if(player.vel > 0.18) {
-    player.damage = Math.min(player.damage + 0.5, 100);
-    document.getElementById('crack').style.opacity = player.damage/100;
-  }
-
-  // UPDATE CAR
-  carGroup.position.copy(player.pos);
-  carGroup.rotation.y = player.rot;
-
-  // CAMERA CHASE
-  camera.position.set(player.pos.x - Math.sin(player.rot)*15, 8, player.pos.z - Math.cos(player.rot)*15);
-  camera.lookAt(player.pos);
-
-  // HUD
-  document.getElementById('speed').textContent = Math.floor(player.vel * 2000);
-  document.getElementById('nitro').textContent = Math.floor(player.nitro);
-  document.getElementById('money').textContent = player.money;
-  document.getElementById('heat').textContent = '⭐'.repeat(Math.floor(player.heat));
-
-  renderer.render(scene, camera);
+function closeQR() {
+  document.getElementById('qrModal').style.display = 'none';
 }
-animate();
 
-// DAY/NIGHT CYCLE
-setInterval(() => {
-  sun.intensity = sun.intensity > 0.5? 0.2 : 1;
-  scene.background = sun.intensity > 0.5? new THREE.Color(0x87CEEB) : new THREE.Color(0x000011);
-}, 10000);
+function updateChecklist() {
+  const level = parseInt(document.getElementById('threatLevel').value);
+  const tasks = {
+    1: ['Check guest list', '1 guard at door'],
+    2: ['Bag checks', 'Metal detector wand', '2 guards minimum'],
+    3: ['3-ring perimeter', 'ID + QR verification', 'Advance sweep 2hr before'],
+    4: ['RF jammer', 'Face recognition cameras', 'Safe room stocked', '3 evac routes'],
+    5: ['Anti-drone system', 'Bomb sweep team', 'Armored transport', '2-person rule 24/7']
+  };
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  const list = document.getElementById('checklist');
+  list.innerHTML = tasks[level].map((t, i) => `
+    <div class="checklist-item">
+      <input type="checkbox" id="t${i}">
+      <label for="t${i}">${t}</label>
+    </div>
+  `).join('');
+}
+
+function saveAssessment() {
+  threatData.level = document.getElementById('threatLevel').value;
+  threatData.checks = Array.from(document.querySelectorAll('#checklist input')).map(c => c.checked);
+  localStorage.setItem('vip_threat', JSON.stringify(threatData));
+  document.getElementById('savedStatus').textContent = '✅ Assessment saved - ASIS compliant';
+}
+
+function setSafeRoom() {
+  const room = document.getElementById('safeRoom').value;
+  localStorage.setItem('vip_saferoom', room);
+  alert('Safe room set: ' + room);
+}
+
+function saveRoutes() {
+  const routes = {
+    A: document.getElementById('routeA').value,
+    B: document.getElementById('routeB').value,
+    C: document.getElementById('routeC').value
+  };
+  localStorage.setItem('vip_routes', JSON.stringify(routes));
+  alert('Evac routes saved');
+}
+
+function triggerPanic() {
+  const routes = JSON.parse(localStorage.getItem('vip_routes') || '{}');
+  document.getElementById('exitRoute').textContent = routes.A || 'Route A';
+  document.getElementById('panicAlert').style.display = 'block';
+  // Vibrate on mobile
+  if(navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
+}
+
+function clearPanic() {
+  document.getElementById('panicAlert').style.display = 'none';
+}
+
+function startAdvance() {
+  let progress = 0;
+  document.getElementById('sweepProgress').textContent = 'Sweeping... 0%';
+  const interval = setInterval(() => {
+    progress += 20;
+    document.getElementById('sweepProgress').textContent = 'Sweeping... ' + progress + '%';
+    if(progress >= 100) {
+      clearInterval(interval);
+      document.getElementById('sweepProgress').textContent = '✅ Complete - Venue Secured';
+    }
+  }, 1000);
+}
+
+// Load saved data
+window.onload = () => {
+  if(threatData.level) document.getElementById('threatLevel').value = threatData.level;
+  updateChecklist();
+  renderGuests();
+}
 </script>
 </body>
 </html>
