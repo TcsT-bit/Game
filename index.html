@@ -3,30 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Pretoria Street Racer</title>
+<title>SA Racer Ultimate</title>
 <style>
     * { margin: 0; padding: 0; touch-action: none; }
-  body { background: #000; overflow: hidden; font-family: Arial; }
+  body { background: #000; overflow: hidden; font-family: 'Orbitron', Arial; }
   #c { display: block; width: 100vw; height: 100vh; }
-.hud { position: absolute; top: 20px; left: 20px; color: #0ff; background: rgba(0,0,0,0.8); padding: 12px 18px; border-radius: 10px; border: 2px solid #00b4d8; font-size: 16px; font-weight: bold; }
-.city-tag { position: absolute; top: 20px; right: 20px; color: #ff0; background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 10px; border: 2px solid #ff0; font-size: 14px; font-weight: bold; }
-.controls { position: absolute; bottom: 30px; width: 100%; height: 180px; pointer-events: none; }
-.btn { position: absolute; width: 80px; height: 80px; background: rgba(0,180,216,0.4); border: 3px solid #00b4d8; border-radius: 50%; color: white; font-size: 30px; display: flex; align-items: center; justify-content: center; pointer-events: all; }
-.btn:active { background: rgba(0,180,216,0.8); transform: scale(0.9); }
-  #up { bottom: 90px; left: 50%; margin-left: -40px; }
-  #down { bottom: 0; left: 50%; margin-left: -40px; }
-  #left { bottom: 45px; left: 40px; }
-  #right { bottom: 45px; right: 40px; }
-  #nitro { bottom: 90px; right: 40px; width: 70px; height: 70px; font-size: 14px; border-color: #ff0; }
+
+.hud { position: absolute; top: 20px; left: 20px; color: #00ffff; background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,50,100,0.8)); padding: 15px 20px; border-radius: 15px; border: 2px solid #00ffff; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px #0ff; }
+.city-tag { position: absolute; top: 20px; right: 20px; color: #ffd700; background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(100,50,0,0.8)); padding: 12px 18px; border-radius: 15px; border: 2px solid #ffd700; font-size: 15px; cursor: pointer; }
+.city-tag:active { background: #ff0; color: #000; }
+
+.minimap { position: absolute; top: 20px; right: 160px; width: 120px; height: 120px; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; }
+
+.wanted { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #ff0000; font-size: 60px; font-weight: bold; text-shadow: 0 0 20px #f00; display: none; animation: flash 0.5s infinite; }
+@keyframes flash { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+.controls { position: absolute; bottom: 30px; width: 100%; height: 200px; pointer-events: none; }
+.btn { position: absolute; width: 90px; height: 90px; background: radial-gradient(circle, rgba(0,180,216,0.5), rgba(0,100,150,0.7)); border: 4px solid #00b4d8; border-radius: 50%; color: white; font-size: 34px; display: flex; align-items: center; justify-content: center; pointer-events: all; box-shadow: 0 0 25px rgba(0,180,216,0.8); }
+.btn:active { transform: scale(0.88); box-shadow: 0 0 40px rgba(0,255,255,1); }
+  #up { bottom: 100px; left: 50%; margin-left: -45px; }
+  #down { bottom: 0; left: 50%; margin-left: -45px; }
+  #left { bottom: 50px; left: 40px; }
+  #right { bottom: 50px; right: 40px; }
+  #nitro { bottom: 100px; right: 40px; width: 85px; height: 85px; font-size: 15px; border-color: #ff0; background: radial-gradient(circle, rgba(255,200,0,0.6), rgba(255,100,0,0.7)); }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="hud">
-  <div>SPEED: <span id="speed">0</span> km/h</div>
-  <div>TIME: <span id="time">0.0</span>s</div>
+  <div>⚡ <span id="speed">0</span> km/h</div>
+  <div>⏱️ <span id="time">0.0</span>s</div>
+  <div>💰 $<span id="cash">0</span></div>
+  <div>⭐ LEVEL: <span id="level">1</span></div>
 </div>
-<div class="city-tag">CITY: PRETORIA CBD</div>
+<div class="city-tag" id="cityBtn">🇿🇦 PRETORIA</div>
+<canvas class="minimap" id="mini"></canvas>
+<div class="wanted" id="wanted">WANTED!</div>
 <canvas id="c"></canvas>
+
 <div class="controls">
   <div class="btn" id="up">↑</div>
   <div class="btn" id="down">↓</div>
@@ -42,139 +56,137 @@
 <script type="module">
 import * as THREE from 'three';
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB); // Day sky
-scene.fog = new THREE.Fog(0x87CEEB, 80, 400);
+// AUDIO ENGINE SOUND
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let engineOsc, engineGain;
+function initAudio() {
+  engineOsc = audioCtx.createOscillator();
+  engineGain = audioCtx.createGain();
+  engineOsc.connect(engineGain);
+  engineGain.connect(audioCtx.destination);
+  engineGain.gain.value = 0;
+  engineOsc.start();
+}
+document.addEventListener('click', initAudio, {once: true});
 
-const camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 1000);
+// SCENE
+const scene = new THREE.Scene();
+let isPretoria = true;
+scene.background = new THREE.Color(0x4a90e2);
+scene.fog = new THREE.FogExp2(0x4a90e2, 0.0015);
+
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-// Lighting
-scene.add(new THREE.AmbientLight(0xffffff, 1.3));
-const sun = new THREE.DirectionalLight(0xffffff, 1.5);
-sun.position.set(50, 100, 50);
+scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+const sun = new THREE.DirectionalLight(0xfff4e6, 2);
+sun.position.set(100, 150, 50);
 scene.add(sun);
 
-// Load your car texture
-const loader = new THREE.TextureLoader();
-const carTexture = loader.load(
-  'https://files.catbox.moe/6p72yd.jpg',
-  () => console.log('Car loaded'),
-  undefined,
-  () => console.log('Car texture failed, using color')
-);
-
-// ROAD - Pretoria style 4-lane
+// ROAD
 const road = new THREE.Mesh(
-  new THREE.PlaneGeometry(80, 3000),
-  new THREE.MeshLambertMaterial({ color: 0x333 })
+  new THREE.PlaneGeometry(80, 5000),
+  new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.8 })
 );
 road.rotation.x = -Math.PI / 2;
-road.position.z = -1500;
+road.position.z = -2500;
 scene.add(road);
 
-// Road lines
+// Lines
 let lines = [];
-for (let i = -1500; i < 1500; i += 25) {
+for (let i = -2500; i < 2500; i += 20) {
   const line = new THREE.Mesh(
-    new THREE.BoxGeometry(0.8, 0.1, 12),
-    new THREE.MeshBasicMaterial({ color: 0xfff })
+    new THREE.BoxGeometry(1, 0.15, 10),
+    new THREE.MeshBasicMaterial({ color: 0x00ffff, emissive: 0x0088ff })
   );
-  line.position.set(0, 0.1, i);
+  line.position.set(0, 0.15, i);
   scene.add(line);
   lines.push(line);
 }
 
-// PRETORIA CBD BUILDINGS - Grid layout like real city
-// Church St runs N-S, Paul Kruger St E-W
-const pretoriaBuildings = [
-  // Church St buildings - tall office blocks
-  {x: -45, z: -1200, w: 18, h: 80, d: 18, color: 0x2a3a4a},
-  {x: -45, z: -1100, w: 16, h: 65, d: 16, color: 0x333},
-  {x: 45, z: -1150, w: 20, h: 90, d: 20, color: 0x2b2b3b}, // Reserve Bank
-  {x: 45, z: -1050, w: 15, h: 55, d: 15, color: 0x3a3a4a},
-
-  // Paul Kruger St
-  {x: -40, z: -1000, w: 17, h: 70, d: 17, color: 0x2c2c3c},
-  {x: 40, z: -1000, w: 17, h: 70, d: 17, color: 0x2c2c3c},
-
-  // More blocks - generate grid
-];
-for (let i = 0; i < 80; i++) {
-  let x = (i % 2 === 0? -1 : 1) * (40 + Math.random() * 20);
-  let z = Math.floor(i/2) * 35 - 1400;
-  let h = 25 + Math.random() * 80;
-  let w = 12 + Math.random() * 8;
-
-  const building = new THREE.Mesh(
-    new THREE.BoxGeometry(w, h, w),
-    new THREE.MeshLambertMaterial({ color: pretoriaBuildings[i%4]?.color || 0x1a2a3a })
-  );
-  building.position.set(x, h/2, z);
-  scene.add(building);
-
-  // Windows
-  for (let y = 5; y < h; y += 7) {
-    if (Math.random() > 0.5) {
-      const window = new THREE.Mesh(
-        new THREE.PlaneGeometry(2, 2.5),
-        new THREE.MeshBasicMaterial({ color: 0xffff88 })
-      );
-      window.position.set(x + (x>0? w/2+0.1 : -w/2-0.1), y, z);
-      window.rotation.y = x>0? 0 : Math.PI;
-      scene.add(window);
+// BUILDINGS GENERATOR
+function generateCity(type) {
+  scene.children.filter(c => c.userData.isBuilding).forEach(c => scene.remove(c));
+  for (let i = 0; i < 150; i++) {
+    let x, z, h, color;
+    if (type === 'pretoria') {
+      x = (i % 2 === 0? -1 : 1) * (42 + Math.random() * 25);
+      z = Math.floor(i/2) * 30 - 2000;
+      h = 20 + Math.random() * 120;
+      color = 0x1a2a3a;
+    } else { // SOWETO
+      x = (Math.random() - 0.5) * 120;
+      z = i * 25 - 2000;
+      h = 8 + Math.random() * 20; // lower buildings
+      color = 0x8b7355; // brown township vibe
     }
+    const b = new THREE.Mesh(
+      new THREE.BoxGeometry(12, h, 12),
+      new THREE.MeshStandardMaterial({ color, metalness: 0.7, emissive: Math.random() > 0.8? 0x444 : 0x000 })
+    );
+    b.position.set(x, h/2, z);
+    b.userData.isBuilding = true;
+    scene.add(b);
   }
 }
+generateCity('pretoria');
 
-// YOUR CAR with texture
+// PLAYER CAR
 const car = new THREE.Group();
-
-// Car body with your image
-const bodyMat = new THREE.MeshLambertMaterial({
-  map: carTexture,
-  color: 0xffffff // fallback if texture fails
-});
-const body = new THREE.Mesh(
-  new THREE.BoxGeometry(3.5, 1.2, 7),
-  bodyMat
-);
-body.position.y = 0.8;
+const body = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.3, 7.2), 
+  new THREE.MeshStandardMaterial({ color: 0xff0033, metalness: 0.5 }));
+body.position.y = 0.9;
 car.add(body);
-
-// Roof
-const roof = new THREE.Mesh(
-  new THREE.BoxGeometry(3, 0.8, 3.5),
-  new THREE.MeshLambertMaterial({ color: 0xcc0022 })
-);
-roof.position.y = 1.8;
-roof.position.z = -0.5;
-car.add(roof);
-
-// Wheels
-for (let x of [-1.8, 1.8]) {
-  for (let z of [-2.5, 2.5]) {
-    const wheel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.8, 0.8, 0.6, 12),
-      new THREE.MeshLambertMaterial({ color: 0x111 })
-    );
-    wheel.rotation.z = Math.PI / 2;
-    wheel.position.set(x, 0.4, z);
-    car.add(wheel);
+let wheels = [];
+for (let x of [-1.9, 1.9]) {
+  for (let z of [-2.7, 2.7]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.7, 16), 
+      new THREE.MeshStandardMaterial({ color: 0x111 }));
+    w.rotation.z = Math.PI / 2;
+    w.position.set(x, 0.5, z);
+    car.add(w);
+    wheels.push(w);
   }
 }
 car.position.set(0, 0, 0);
 scene.add(car);
 
-// Camera - chase view
-camera.position.set(0, 7, 18);
-camera.lookAt(0, 1, -8);
+// AI OPPONENTS
+let aiCars = [];
+for (let i = 0; i < 5; i++) {
+  const ai = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 7), 
+    new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff }));
+  ai.position.set((Math.random() - 0.5) * 50, 0.9, -100 - i * 80);
+  ai.userData.speed = 0.5 + Math.random() * 0.3;
+  ai.userData.lane = (Math.random() - 0.5) * 40;
+  scene.add(ai);
+  aiCars.push(ai);
+}
 
-let speed = 0, turn = 0, keys = {};
+// POLICE
+let police = [];
+function spawnPolice() {
+  const p = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 7),
+    new THREE.MeshStandardMaterial({ color: 0x0033ff, emissive: 0x0000ff }));
+  p.position.set(car.position.x, 0.9, car.position.z - 100);
+  p.userData.speed = 0.95;
+  scene.add(p);
+  police.push(p);
+  document.getElementById('wanted').style.display = 'block';
+}
+
+// MINI MAP
+const miniCtx = document.getElementById('mini').getContext('2d');
+miniCtx.canvas.width = 120;
+miniCtx.canvas.height = 120;
+
+// GAME STATE
+let speed = 0, turn = 0, cash = 0, level = 1, keys = {};
 let startTime = Date.now();
+let damage = 0;
 
-// Controls
+// CONTROLS
 ['up','down','left','right'].forEach(id => {
   let key = {up:'w', down:'s', left:'a', right:'d'}[id];
   document.getElementById(id).addEventListener('touchstart', e => { e.preventDefault(); keys[key]=true; });
@@ -183,37 +195,118 @@ let startTime = Date.now();
 document.getElementById('nitro').addEventListener('touchstart', () => keys['n']=true);
 document.getElementById('nitro').addEventListener('touchend', () => keys['n']=false);
 
+// SWITCH CITY
+document.getElementById('cityBtn').addEventListener('click', () => {
+  isPretoria = !isPretoria;
+  document.getElementById('cityBtn').textContent = isPretoria? '🇿🇦 PRETORIA' : '🏘️ SOWETO';
+  scene.background = new THREE.Color(isPretoria? 0x4a90e2 : 0xffd4aa);
+  scene.fog = new THREE.FogExp2(isPretoria? 0x4a90e2 : 0xffd4aa, 0.0015);
+  generateCity(isPretoria? 'pretoria' : 'soweto');
+});
+
+// LOOP
 function animate() {
   requestAnimationFrame(animate);
 
-  if (keys['w']) speed += 0.022;
-  if (keys['s']) speed -= 0.035;
-  if (keys['a']) turn = Math.min(turn + 0.045, 0.7);
-  if (keys['d']) turn = Math.max(turn - 0.045, -0.7);
-  if (keys['n'] && speed > 0.2) speed += 0.04;
-  turn *= 0.9;
+  // INPUT
+  if (keys['w']) speed += 0.028;
+  if (keys['s']) speed -= 0.04;
+  if (keys['a']) turn = Math.min(turn + 0.055, 0.9);
+  if (keys['d']) turn = Math.max(turn - 0.055, -0.9);
+  let boost = keys['n'] && speed > 0.3;
+  if (boost) speed += 0.06;
+  turn *= 0.88;
 
-  speed *= 0.982;
-  speed = Math.max(0, Math.min(speed, keys['n']? 1.2 : 0.85));
+  speed *= 0.98;
+  speed = Math.max(0, Math.min(speed, boost? 1.6 : 1.0));
 
+  // PLAYER MOVE
   car.rotation.y = turn;
-  car.position.z -= speed * 9;
-  car.position.x = turn * 15;
+  car.rotation.z = -turn * 0.35;
+  car.position.z -= speed * 11;
+  car.position.x = turn * 20;
+  wheels.forEach(w => w.rotation.x += speed * 0.9);
 
-  // Move lines
-  lines.forEach(line => {
-    line.position.z += speed * 9;
-    if (line.position.z > 1500) line.position.z -= 3000;
+  // COLLISION DAMAGE
+  if (Math.abs(car.position.x) > 35) {
+    damage += 0.02;
+    camera.position.x += (Math.random()-0.5) * damage;
+  } else damage *= 0.95;
+
+  // AI CARS
+  aiCars.forEach(ai => {
+    ai.position.z += ai.userData.speed * 11;
+    ai.position.x = ai.userData.lane + Math.sin(Date.now()*0.001 + ai.position.z)*5;
+    if (ai.position.z > car.position.z + 200) {
+      ai.position.z = car.position.z - 200 - Math.random() * 100;
+      cash += 50; // pass car = money
+    }
+    // collision with player
+    if (Math.abs(ai.position.z - car.position.z) < 7 && Math.abs(ai.position.x - car.position.x) < 4) {
+      speed *= 0.5;
+      damage += 0.3;
+    }
   });
 
-  camera.position.x = car.position.x * 0.6;
-  camera.position.z = car.position.z + 18;
-  camera.lookAt(car.position.x, 1.5, car.position.z - 10);
+  // POLICE SPAWN
+  if (speed > 1.3 && police.length === 0) spawnPolice();
+  police.forEach(p => {
+    p.position.z += p.userData.speed * 11;
+    p.position.x += (car.position.x - p.position.x) * 0.05; // chase player
+    if (Math.abs(p.position.z - car.position.z) < 6) {
+      speed = 0; // caught
+      document.getElementById('wanted').style.display = 'none';
+    }
+  });
 
-  if (car.position.z < -1500) car.position.z = 1500;
+  // ENGINE SOUND
+  if (engineGain) {
+    engineOsc.frequency.value = 50 + speed * 400;
+    engineGain.gain.value = speed * 0.1;
+  }
 
-  document.getElementById('speed').textContent = Math.floor(speed * 340);
+  // LINES
+  lines.forEach(line => {
+    line.position.z += speed * 11;
+    if (line.position.z > 2500) line.position.z -= 5000;
+  });
+
+  // CAMERA
+  camera.position.x = car.position.x * 0.7;
+  camera.position.y = 7.5;
+  camera.position.z = car.position.z + 22;
+  camera.lookAt(car.position.x, 1.5, car.position.z - 15);
+
+  // LOOP TRACK
+  if (car.position.z < -2500) {
+    car.position.z = 2500;
+    level++;
+    cash += 1000;
+  }
+
+  // MINIMAP
+  miniCtx.fillStyle = '#000';
+  miniCtx.fillRect(0, 0, 120, 120);
+  miniCtx.fillStyle = '#0f0';
+  miniCtx.fillRect(60, 60, 4, 4);
+  aiCars.forEach(ai => {
+    let y = 60 - (ai.position.z - car.position.z) * 0.3;
+    let x = 60 + ai.position.x * 1.5;
+    miniCtx.fillStyle = '#ff0';
+    miniCtx.fillRect(x, y, 3, 3);
+  });
+  police.forEach(p => {
+    let y = 60 - (p.position.z - car.position.z) * 0.3;
+    let x = 60 + p.position.x * 1.5;
+    miniCtx.fillStyle = '#00f';
+    miniCtx.fillRect(x, y, 4, 4);
+  });
+
+  // HUD
+  document.getElementById('speed').textContent = Math.floor(speed * 380);
   document.getElementById('time').textContent = ((Date.now() - startTime) / 1000).toFixed(1);
+  document.getElementById('cash').textContent = cash;
+  document.getElementById('level').textContent = level;
 
   renderer.render(scene, camera);
 }
@@ -226,4 +319,4 @@ window.addEventListener('resize', () => {
 });
 </script>
 </body>
-   </html>
+</html>
