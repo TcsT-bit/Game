@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v3.2 + Reset Mode</title>
+<title>VIP GUARDIAN v3.3 + No Match Alert</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
   body { background: #000; color: #0ff; overflow: hidden; transition: all 0.3s; }
@@ -66,7 +66,7 @@
 <body>
 
 <div class="header">
-  <h1>🛡️ VIP GUARDIAN v3.2</h1>
+  <h1>🛡️ VIP GUARDIAN v3.3</h1>
   <div style="display: flex; gap: 10px; align-items: center;">
     <div class="ai-score" id="aiScore">AI Risk: 0</div>
     <button class="btn btn-small" onclick="toggleTheme()">🌙</button>
@@ -166,7 +166,6 @@
   <h4 style="margin-top:12px;">Access Log</h4>
   <div id="accessLog" style="max-height:100px; overflow-y:auto;"></div>
 
-  <!-- RESET SECTION -->
   <div class="reset-section">
     <h4 style="color: #ff0044;">⚠️ DANGER ZONE - Event Reset</h4>
     <div class="reset-warning">This will permanently delete ALL guests, guards, logs, and settings. Cannot be undone.</div>
@@ -177,12 +176,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script>
-const RESET_PASSWORD = 'ADMIN123'; // Change this to your own password
+const RESET_PASSWORD = 'ADMIN123';
 let guests = JSON.parse(localStorage.getItem('vip_guests_v3') || '[]');
 let guards = JSON.parse(localStorage.getItem('vip_guards_v3') || '[]');
 let logs = JSON.parse(localStorage.getItem('vip_logs_v3') || '[]');
 let currentPhoto = null;
 let faceScanInterval = null;
+let faceScanTimeout = null;
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -196,51 +196,33 @@ function showScreen(id) {
   calculateAI();
 }
 
-// RESET EVENT FUNCTION - PASSWORD PROTECTED
+// RESET EVENT FUNCTION
 function resetEvent() {
   const password = prompt('🔒 ENTER ADMIN PASSWORD TO RESET EVENT:\nDefault: ADMIN123');
-  if(password === null) return; // User cancelled
-
+  if(password === null) return;
   if(password!== RESET_PASSWORD) {
     alert('❌ WRONG PASSWORD - Reset cancelled');
     return;
   }
-
   const confirm1 = confirm('⚠️ WARNING: This will delete ALL event data!\nGuests: ' + guests.length + '\nGuards: ' + guards.length + '\nLogs: ' + logs.length + '\n\nContinue?');
   if(!confirm1) return;
-
   const confirm2 = confirm('🚨 FINAL CONFIRMATION:\nThis action CANNOT be undone.\nType OK in next prompt to proceed.');
   if(!confirm2) return;
-
   const finalCheck = prompt('Type "OK" to confirm reset:');
   if(finalCheck!== 'OK') {
     alert('Reset cancelled');
     return;
   }
-
-  // Log the reset before wiping
   const resetLog = {time: new Date().toLocaleTimeString(), name: 'SYSTEM', id: 'RESET', action: 'EVENT RESET'};
   localStorage.setItem('vip_logs_v3', JSON.stringify([resetLog]));
-
-  // Clear all data
   localStorage.removeItem('vip_guests_v3');
   localStorage.removeItem('vip_guards_v3');
   localStorage.removeItem('vip_logs_v3');
   localStorage.removeItem('vip_saferoom_v3');
   localStorage.removeItem('vip_routes_v3');
-
-  // Reset arrays
-  guests = [];
-  guards = [];
-  logs = [];
-
+  guests = []; guards = []; logs = [];
   alert('✅ EVENT RESET COMPLETE\nAll data has been wiped.');
-
-  // Refresh UI
-  renderGuests();
-  renderGuards();
-  renderLogs();
-  calculateAI();
+  renderGuests(); renderGuards(); renderLogs(); calculateAI();
 }
 
 // THEME
@@ -265,37 +247,67 @@ function capturePhoto() {
   alert('Face enrolled!');
 }
 
-// FACE RECOGNITION
+// FACE RECOGNITION WITH 5SEC NO MATCH ALERT
 function startFaceScan() {
-  document.getElementById('scanStatus').textContent = 'Scanning faces...';
-  faceScanInterval = setInterval(() => {
-    const box = document.getElementById('faceBox');
-    box.style.display = 'block';
-    box.style.width = '100px';
-    box.style.height = '100px';
-    box.style.left = '40px';
-    box.style.top = '30px';
+  document.getElementById('scanStatus').textContent = 'Scanning faces... 5sec timeout';
+  document.getElementById('faceBox').style.display = 'block';
+  document.getElementById('faceBox').style.width = '100px';
+  document.getElementById('faceBox').style.height = '100px';
+  document.getElementById('faceBox').style.left = '40px';
+  document.getElementById('faceBox').style.top = '30px';
 
+  let matchFound = false;
+
+  // Main scan interval - checks every 2sec
+  faceScanInterval = setInterval(() => {
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     ctx.drawImage(document.getElementById('video'), 0, 0, 200, 200);
     const currentFrame = canvas.toDataURL();
 
     guests.forEach(g => {
-      if(g.photo && currentFrame.length > 10000) {
+      if(g.photo && currentFrame.length > 10000 &&!matchFound) {
+        matchFound = true;
+        clearInterval(faceScanInterval);
+        clearTimeout(faceScanTimeout);
+
         document.getElementById('scanStatus').textContent = `✅ MATCH FOUND: ${g.name} - ACCESS GRANTED`;
-        logs.push({time: new Date().toLocaleTimeString(), name: g.name, id: g.id, action: 'FACE SCAN'});
+        document.getElementById('faceBox').style.borderColor = '#0f0';
+
+        logs.push({time: new Date().toLocaleTimeString(), name: g.name, id: g.id, action: 'FACE SCAN - GRANTED'});
         localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
         renderLogs();
         navigator.vibrate(200);
+
+        setTimeout(() => stopFaceScan(), 2000);
       }
     });
   }, 2000);
+
+  // 5 second timeout - if no match found
+  faceScanTimeout = setTimeout(() => {
+    if(!matchFound) {
+      clearInterval(faceScanInterval);
+      document.getElementById('scanStatus').textContent = '❌ NO MATCH - ACCESS DENIED';
+      document.getElementById('faceBox').style.borderColor = '#ff0044';
+
+      // Alert + Log unknown face
+      alert('⚠️ UNKNOWN FACE DETECTED\nNo match in database after 5 seconds!');
+      logs.push({time: new Date().toLocaleTimeString(), name: 'UNKNOWN FACE', id: 'DENIED', action: 'FACE SCAN - DENIED'});
+      localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
+      renderLogs();
+      navigator.vibrate([100,100,100,100,200]);
+
+      setTimeout(() => stopFaceScan(), 3000);
+    }
+  }, 5000);
 }
 
 function stopFaceScan() {
   clearInterval(faceScanInterval);
+  clearTimeout(faceScanTimeout);
   document.getElementById('faceBox').style.display = 'none';
+  document.getElementById('faceBox').style.borderColor = '#0f0';
   document.getElementById('scanStatus').textContent = 'Scan stopped';
 }
 
@@ -304,17 +316,14 @@ function addGuest() {
   const name = document.getElementById('guestName').value.trim();
   const role = document.getElementById('guestRole').value;
   if(!name ||!currentPhoto) return alert('Name + Photo required');
-
   const id = 'VIP' + Date.now().toString().slice(-6);
   guests.push({name, role, id, photo: currentPhoto, checked: false});
   localStorage.setItem('vip_guests_v3', JSON.stringify(guests));
-
   document.getElementById('qrCode').innerHTML = `
     <div class="qr-photo"><img src="${currentPhoto}"></div>
     <div>${name}<br>${id}<br>${role.toUpperCase()}</div>
   `;
   document.getElementById('qrModal').style.display = 'block';
-
   document.getElementById('guestName').value = '';
   currentPhoto = null;
   renderGuests();
@@ -340,21 +349,17 @@ function scanPlate() {
   const canvas = document.getElementById('canvasPlate');
   canvas.width = 400; canvas.height = 200;
   canvas.getContext('2d').drawImage(video, 0, 0, 400, 200);
-
   document.getElementById('plateResult').textContent = 'Scanning plate...';
-
   Tesseract.recognize(canvas, 'eng', {
     logger: m => console.log(m)
   }).then(({ data: { text } }) => {
     const plate = text.replace(/[^A-Z0-9]/g, '').substring(0, 8);
     const blacklist = document.getElementById('blacklist').value.split(',').map(p => p.trim().toUpperCase());
     const isBlacklisted = blacklist.some(b => plate.includes(b) && b.length > 0);
-
     document.getElementById('plateResult').innerHTML = `
       <strong>Detected:</strong> ${plate || 'None'}<br>
       <strong>Status:</strong> ${isBlacklisted? '🚨 BLACKLISTED - DENY ENTRY' : '✅ CLEAR - ALLOW ENTRY'}
     `;
-
     if(isBlacklisted) {
       navigator.vibrate([200,100,200]);
       logs.push({time: new Date().toLocaleTimeString(), name: 'PLATE:'+plate, id: 'BLACKLIST', action: 'DENIED'});
@@ -409,13 +414,10 @@ function calculateAI() {
   const totalChecks = document.querySelectorAll('#checklist input').length;
   const guardCount = guards.length;
   const vipCount = guests.filter(g => g.role === 'vip').length;
-
   let score = 100 - (level * 15) + (guardCount * 5) + (checkedCount * 3) - (vipCount * 2);
   score = Math.max(0, Math.min(100, score));
-
   document.getElementById('aiScore').textContent = `AI Risk: ${score}`;
   document.getElementById('aiScore').style.background = score > 70? '#0f0' : score > 40? '#ffaa00' : '#ff0044';
-
   document.getElementById('aiAnalysis').innerHTML = `
     Analysis: ${guardCount} guards for ${vipCount} VIPs.
     Checklist: ${checkedCount}/${totalChecks} complete.
@@ -441,7 +443,7 @@ function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.setFontSize(18);
-  doc.text('VIP SECURITY REPORT v3.2', 20, 20);
+  doc.text('VIP SECURITY REPORT v3.3', 20, 20);
   doc.setFontSize(12);
   doc.text('ASIS EP Standard + AI Analysis', 20, 30);
   doc.text('Date: ' + new Date().toLocaleString(), 20, 40);
@@ -449,7 +451,7 @@ function generatePDF() {
   doc.text('AI Risk Score: ' + document.getElementById('aiScore').textContent, 20, 60);
   doc.text('Total Guests: ' + guests.length, 20, 70);
   doc.text('Total Guards: ' + guards.length, 20, 80);
-  doc.save('VIP_Security_v3.2_Report.pdf');
+  doc.save('VIP_Security_v3.3_Report.pdf');
 }
 
 function exportJSON() {
@@ -480,11 +482,9 @@ function triggerPanic() {
   document.getElementById('exitRoute').textContent = routes.A || 'Route A';
   document.getElementById('panicAlert').style.display = 'block';
   if(navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
-
   logs.push({time: new Date().toLocaleTimeString(), name: 'SYSTEM', id: 'PANIC'});
   localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
   renderLogs();
-
   setTimeout(sendWhatsApp, 1000);
 }
 
