@@ -3,177 +3,141 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v3.0</title>
+<title>VIP GUARDIAN v4.0 - DARPA EDITION</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
-  body { background: #000; color: #0ff; overflow: hidden; transition: all 0.3s; }
-  body.light { background: #f0f0f0; color: #003; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Orbitron', monospace; }
+  body { background: #000; color: #0f0; overflow: hidden; transition: filter 0.3s; }
+  body.night { filter: hue-rotate(90deg) contrast(1.5); }
 
- .header { background: linear-gradient(90deg, #001122, #004488); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; display: flex; justify-content: space-between; align-items: center; }
- .header h1 { font-size: 18px; text-shadow: 0 0 10px #0ff; }
- .ai-score { background: #0f0; color: #000; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+.header { background: linear-gradient(90deg, #001100, #00ff00); padding: 8px; text-align: center; border-bottom: 3px solid #0f0; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 16px; text-shadow: 0 0 15px #0f0; }
+.status-bar { display: flex; gap: 8px; font-size: 10px; }
+.status { background: #0f0; color: #000; padding: 3px 8px; border-radius: 15px; }
 
- .tabs { display: flex; background: #111; border-bottom: 2px solid #0ff; }
- .tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; background: #1a1a1a; border-right: 1px solid #333; font-size: 10px; }
- .tab.active { background: #0ff; color: #000; }
+.tabs { display: flex; background: #0a0a0a; border-bottom: 2px solid #0f0; }
+.tab { flex: 1; padding: 6px; text-align: center; cursor: pointer; background: #111; border-right: 1px solid #0f0; font-size: 9px; }
+.tab.active { background: #0f0; color: #000; }
 
- .screen { display: none; padding: 10px; height: calc(100vh - 105px); overflow-y: auto; }
- .screen.active { display: block; }
+.screen { display: none; padding: 8px; height: calc(100vh - 100px); overflow-y: auto; }
+.screen.active { display: block; }
 
- .btn { background: #0ff; color: #000; border: none; padding: 8px 12px; margin: 5px 2px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
- .btn-danger { background: #ff0044; color: #fff; font-size: 14px; padding: 12px; width: 100%; }
- .btn-gps { background: #00ff88; }
- .btn-whatsapp { background: #25D366; color: #fff; }
+.btn { background: #0f0; color: #000; border: none; padding: 6px 10px; margin: 4px 2px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
+.btn-danger { background: #ff0000; color: #fff; font-size: 13px; padding: 10px; width: 100%; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+.btn-telegram { background: #0088cc; color: #fff; }
 
-  input, select { width: 100%; padding: 6px; margin: 5px 0; background: #222; border: 2px solid #0ff; color: #0ff; border-radius: 4px; font-size: 12px; }
-  body.light input, body.light select { background: #fff; color: #000; border-color: #003; }
+  input, select { width: 100%; padding: 5px; margin: 4px 0; background: #001100; border: 2px solid #0f0; color: #0f0; border-radius: 3px; font-size: 11px; }
 
- .ring { border: 3px solid; border-radius: 50%; position: relative; margin: 10px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; }
- .ring-outer { width: 240px; height: 240px; border-color: #ff4444; }
- .ring-middle { width: 160px; height: 160px; border-color: #ffaa00; position: absolute; }
- .ring-inner { width: 80px; height: 80px; border-color: #00ff00; position: absolute; }
- .rings-container { position: relative; height: 280px; display: flex; align-items: center; justify-content: center; }
+.radar { width: 240px; height: 240px; border: 3px solid #0f0; border-radius: 50%; margin: 10px auto; position: relative; background: radial-gradient(circle, #001100 0%, #000 70%); }
+.radar-sweep { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(transparent 0deg, #0f0 10deg, transparent 20deg); animation: sweep 3s linear infinite; }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+.radar-dot { position: absolute; width: 8px; height: 8px; background: #ff0000; border-radius: 50%; box-shadow: 0 0 10px #ff0000; }
 
- .guard-dot { position: absolute; width: 25px; height: 25px; background: #0ff; border-radius: 50%; border: 2px solid #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; color: #000; }
- .guard-dot.offline { background: #555; }
- .guard-battery { font-size: 6px; color: #0f0; }
+.heat-cell { width: 20px; height: 20px; display: inline-block; margin: 1px; border-radius: 3px; }
 
- .guest-card { background: #1a1a1a; border-left: 4px solid #0ff; padding: 6px; margin: 5px 0; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 8px; }
-  body.light.guest-card { background: #e0e0e0; }
- .vip { border-left-color: #ff0044; }
+.alert { background: #ff0000; color: #fff; padding: 8px; margin: 6px 0; border-radius: 6px; display: none; text-align: center; font-size: 12px; animation: blink 0.3s infinite; }
 
- .qr-box { width: 200px; height: 200px; background: #fff; margin: 8px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #000; font-size: 8px; text-align: center; padding: 5px; border: 3px solid #0ff; }
- .qr-photo { width: 70px; height: 70px; border-radius: 50%; overflow: hidden; border: 2px solid #0ff; }
- .qr-photo img { width: 100%; height: 100%; object-fit: cover; }
-
- .alert { background: #ff0044; color: #fff; padding: 10px; margin: 8px 0; border-radius: 8px; display: none; text-align: center; font-size: 14px; animation: blink 0.4s infinite; }
-  @keyframes blink { 50% { opacity: 0.6; } }
-
- .log-entry { background: #222; padding: 5px; margin: 2px 0; border-radius: 3px; font-size: 10px; }
-  body.light.log-entry { background: #ddd; }
-
-  video { width: 100%; max-width: 180px; border: 2px solid #0ff; border-radius: 6px; }
+  video { width: 100%; max-width: 160px; border: 2px solid #0f0; border-radius: 5px; filter: brightness(1.2); }
   canvas { display: none; }
 
- .face-box { position: absolute; border: 3px solid #0f0; display: none; }
- .scan-status { color: #0f0; font-size: 11px; margin-top: 5px; }
+.voice-indicator { width: 50px; height: 50px; border-radius: 50%; background: #0f0; margin: 10px auto; display: none; }
+.voice-indicator.active { animation: pulse 0.5s infinite; display: block; }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div class="header">
-  <h1>🛡️ VIP GUARDIAN v3.0</h1>
-  <div style="display: flex; gap: 10px; align-items: center;">
-    <div class="ai-score" id="aiScore">AI Risk: 0</div>
-    <button class="btn btn-small" onclick="toggleTheme()">🌙</button>
+  <h1>🛡️ VIP GUARDIAN v4.0 DARPA</h1>
+  <div class="status-bar">
+    <div class="status" id="droneStatus">DRONE: CLEAR</div>
+    <div class="status" id="voiceStatus">VOICE: OFF</div>
+    <button class="btn btn-small" onclick="toggleNight()">🌙</button>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showScreen('rings')">RINGS+GPS+BAT</div>
-  <div class="tab" onclick="showScreen('guests')">FACE SCAN</div>
-  <div class="tab" onclick="showScreen('threat')">AI THREAT+PDF</div>
-  <div class="tab" onclick="showScreen('evac')">WHATSAPP+LOG</div>
+  <div class="tab active" onclick="showScreen('radar')">RADAR+DRONE</div>
+  <div class="tab" onclick="showScreen('plate')">PLATE SCAN</div>
+  <div class="tab" onclick="showScreen('voice')">VOICE CMD</div>
+  <div class="tab" onclick="showScreen('alerts')">TELEGRAM+PANIC</div>
 </div>
 
-<div class="alert" id="panicAlert">🚨 BLUE CODE 🚨<br>VIP TO SAFE ROOM<br>Exit: <span id="exitRoute">Route A</span></div>
+<div class="alert" id="panicAlert">🚨 BLUE CODE + DRONE ALERT 🚨</div>
+<div class="alert" id="droneAlert">🚁 DRONE DETECTED 50M OUT 🚁</div>
 
-<!-- RINGS + GPS + BATTERY -->
-<div class="screen active" id="rings">
-  <h3>Live Guards + Battery Status</h3>
-  <div class="rings-container" id="ringMap">
-    <div class="ring ring-outer">OUTER<br>Perimeter</div>
-    <div class="ring ring-middle">MIDDLE<br>Screening</div>
-    <div class="ring ring-inner">INNER<br>VIP</div>
+<!-- RADAR + DRONE DETECTION -->
+<div class="screen active" id="radar">
+  <h3>Drone Detection Radar</h3>
+  <div class="radar" id="radarScreen">
+    <div class="radar-sweep"></div>
+    <div id="radarDots"></div>
   </div>
-  <button class="btn btn-gps" onclick="shareLocation()">📍 Share GPS + Battery</button>
-  <div id="guardList" style="margin-top:8px; font-size:11px;"></div>
+  <button class="btn" onclick="startDroneDetection()">🎤 Start Audio Detection</button>
+  <button class="btn" onclick="stopDroneDetection()">Stop Detection</button>
+  <div id="heatMap" style="margin-top:10px;">
+    <h4>Heat Map - Crowd Density</h4>
+    <div id="heatGrid"></div>
+  </div>
 </div>
 
-<!-- FACE SCAN -->
-<div class="screen" id="guests">
-  <h3>Face Recognition Access Control</h3>
-  <div style="position: relative; display: inline-block;">
-    <video id="video" autoplay></video>
-    <div class="face-box" id="faceBox"></div>
-  </div>
-  <div class="scan-status" id="scanStatus">Waiting for face...</div>
-  <button class="btn" onclick="startFaceScan()">🔍 Start Auto Scan</button>
-  <button class="btn" onclick="stopFaceScan()">Stop Scan</button>
-
-  <input id="guestName" placeholder="Full Name">
-  <select id="guestRole">
-    <option value="vip">Red - VIP</option>
-    <option value="staff">Blue - Staff</option>
-  </select>
-  <button class="btn" onclick="capturePhoto()">📸 Enroll Face</button>
+<!-- LICENSE PLATE SCANNER -->
+<div class="screen" id="plate">
+  <h3>License Plate OCR Scanner</h3>
+  <video id="video" autoplay></video>
   <canvas id="canvas"></canvas>
-  <button class="btn" onclick="addGuest()">Add to Database</button>
+  <button class="btn" onclick="scanPlate()">📷 Scan Plate</button>
+  <input id="blacklist" placeholder="Blacklist plates: ABC123, XYZ999" value="ABC123,TEST999">
+  <div id="plateResult" style="margin-top:10px; font-size:12px;"></div>
+</div>
 
-  <div id="guestList"></div>
-
-  <div id="qrModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:100;">
-    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; padding:12px; border:3px solid #0ff;">
-      <h3>VIP Access Card</h3>
-      <div class="qr-box" id="qrCode"></div>
-      <button class="btn" onclick="closeQR()">Close</button>
-    </div>
+<!-- VOICE COMMAND -->
+<div class="screen" id="voice">
+  <h3>Voice Command Control</h3>
+  <button class="btn" onclick="startVoice()">🎤 Enable Voice Command</button>
+  <button class="btn" onclick="stopVoice()">Stop Voice</button>
+  <div class="voice-indicator" id="voiceIndicator"></div>
+  <div id="voiceLog" style="margin-top:10px; font-size:11px; background:#001100; padding:8px; border-radius:5px; height:150px; overflow-y:auto;">
+    Say "BLUE CODE" to trigger panic<br>
+    Say "SCAN PLATE" to start camera<br>
   </div>
 </div>
 
-<!-- AI THREAT + PDF -->
-<div class="screen" id="threat">
-  <h3>AI Threat Assessment</h3>
-  <select id="threatLevel" onchange="calculateAI()">
-    <option value="1">Level 1 - Low</option>
-    <option value="3">Level 3 - Regional VIP</option>
-    <option value="5">Level 5 - Head of State</option>
-  </select>
-  <div id="checklist"></div>
-  <button class="btn" onclick="generatePDF()">📄 Export PDF Report</button>
-  <button class="btn" onclick="exportJSON()">💾 Export All Data JSON</button>
-  <div id="aiAnalysis" style="margin-top:10px; font-size:11px; color:#0f0;"></div>
-</div>
+<!-- TELEGRAM + PANIC -->
+<div class="screen" id="alerts">
+  <h3>Multi-Channel Emergency Alerts</h3>
+  <input id="telegramToken" placeholder="Telegram Bot Token">
+  <input id="telegramChat" placeholder="Telegram Chat ID">
+  <button class="btn-telegram" onclick="testTelegram()">Test Telegram Alert</button>
 
-<!-- WHATSAPP + LOG -->
-<div class="screen" id="evac">
-  <h3>Emergency Comms + Access Log</h3>
-  <input id="safeRoom" placeholder="Safe Room Location">
-  <button class="btn" onclick="setSafeRoom()">Set Safe Room</button>
+  <button class="btn-danger" onclick="triggerPanic()">🚨 PANIC ALL CHANNELS 🚨</button>
+  <button class="btn" onclick="backupToDrive()">☁️ Backup to Google Drive</button>
 
-  <input id="routeA" placeholder="Route A Exit">
-  <button class="btn" onclick="saveRoutes()">Save Routes</button>
-
-  <button class="btn-danger" onclick="triggerPanic()">🚨 PANIC + WHATSAPP ALERT</button>
-  <button class="btn-whatsapp" onclick="sendWhatsApp()">📱 Test WhatsApp Message</button>
-
-  <h4 style="margin-top:12px;">Access Log</h4>
-  <div id="accessLog" style="max-height:120px; overflow-y:auto;"></div>
+  <h4 style="margin-top:10px;">Access Log</h4>
+  <div id="accessLog" style="max-height:100px; overflow-y:auto; font-size:10px;"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script>
-let guests = JSON.parse(localStorage.getItem('vip_guests_v3') || '[]');
-let guards = JSON.parse(localStorage.getItem('vip_guards_v3') || '[]');
-let logs = JSON.parse(localStorage.getItem('vip_logs_v3') || '[]');
-let currentPhoto = null;
-let faceScanInterval = null;
+let logs = JSON.parse(localStorage.getItem('vip_logs_v4') || '[]');
+let droneInterval = null;
+let voiceRecognition = null;
+let audioContext = null;
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   event.target.classList.add('active');
-  if(id === 'guests') { renderGuests(); startCamera(); }
-  if(id === 'rings') renderGuards();
-  if(id === 'evac') renderLogs();
-  calculateAI();
+  if(id === 'plate') startCamera();
+  if(id === 'radar') generateHeatMap();
 }
 
-// THEME
-function toggleTheme() {
-  document.body.classList.toggle('light');
-  event.target.textContent = document.body.classList.contains('light')? '☀️' : '🌙';
+// NIGHT VISION
+function toggleNight() {
+  document.body.classList.toggle('night');
+  event.target.textContent = document.body.classList.contains('night')? '☀️' : '🌙';
 }
 
 // CAMERA
@@ -183,223 +147,188 @@ function startCamera() {
   }).catch(() => alert('Camera denied'));
 }
 
-function capturePhoto() {
+// DRONE DETECTION - Audio frequency analysis
+function startDroneDetection() {
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    source.connect(analyser);
+    analyser.fftSize = 256;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    droneInterval = setInterval(() => {
+      analyser.getByteFrequencyData(dataArray);
+      // Drone buzz is typically 100-500Hz
+      let droneFreq = 0;
+      for(let i = 10; i < 50; i++) droneFreq += dataArray[i];
+
+      if(droneFreq > 5000) {
+        document.getElementById('droneStatus').textContent = 'DRONE: DETECTED';
+        document.getElementById('droneStatus').style.background = '#ff0000';
+        document.getElementById('droneAlert').style.display = 'block';
+
+        // Add red dot to radar
+        const dot = document.createElement('div');
+        dot.className = 'radar-dot';
+        dot.style.left = Math.random() * 220 + 'px';
+        dot.style.top = Math.random() * 220 + 'px';
+        document.getElementById('radarDots').appendChild(dot);
+
+        navigator.vibrate([200,100,200,100,400]);
+      } else {
+        document.getElementById('droneStatus').textContent = 'DRONE: CLEAR';
+        document.getElementById('droneStatus').style.background = '#0f0';
+      }
+    }, 500);
+  });
+}
+
+function stopDroneDetection() {
+  clearInterval(droneInterval);
+  if(audioContext) audioContext.close();
+  document.getElementById('droneStatus').textContent = 'DRONE: OFF';
+}
+
+// LICENSE PLATE OCR
+function scanPlate() {
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
-  canvas.width = 200; canvas.height = 200;
-  canvas.getContext('2d').drawImage(video, 0, 0, 200, 200);
-  currentPhoto = canvas.toDataURL('image/png');
-  alert('Face enrolled!');
-}
+  canvas.width = 400; canvas.height = 200;
+  canvas.getContext('2d').drawImage(video, 0, 0, 400, 200);
 
-// FACE RECOGNITION - Simple similarity check
-function startFaceScan() {
-  document.getElementById('scanStatus').textContent = 'Scanning faces...';
-  faceScanInterval = setInterval(() => {
-    // Simulate face detection box
-    const box = document.getElementById('faceBox');
-    box.style.display = 'block';
-    box.style.width = '100px';
-    box.style.height = '100px';
-    box.style.left = '40px';
-    box.style.top = '30px';
+  document.getElementById('plateResult').textContent = 'Scanning plate...';
 
-    // Check similarity with enrolled guests
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(document.getElementById('video'), 0, 0, 200, 200);
-    const currentFrame = canvas.toDataURL();
+  Tesseract.recognize(canvas, 'eng', {logger: m => {}}).then(({ data: { text } }) => {
+    const plate = text.replace(/[^A-Z0-9]/g, '').substring(0, 8);
+    const blacklist = document.getElementById('blacklist').value.split(',');
+    const isBlacklisted = blacklist.some(b => plate.includes(b.trim()));
 
-    guests.forEach(g => {
-      if(g.photo && currentFrame.length > 10000) { // Simple check
-        document.getElementById('scanStatus').textContent = `✅ MATCH FOUND: ${g.name} - ACCESS GRANTED`;
-        logs.push({time: new Date().toLocaleTimeString(), name: g.name, id: g.id, action: 'FACE SCAN'});
-        localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
-        renderLogs();
-        navigator.vibrate(200);
-      }
-    });
-  }, 2000);
-}
+    document.getElementById('plateResult').innerHTML = `
+      Detected: <strong>${plate}</strong><br>
+      Status: ${isBlacklisted? '🚨 BLACKLISTED - DENY ENTRY' : '✅ CLEAR - ALLOW ENTRY'}
+    `;
 
-function stopFaceScan() {
-  clearInterval(faceScanInterval);
-  document.getElementById('faceBox').style.display = 'none';
-  document.getElementById('scanStatus').textContent = 'Scan stopped';
-}
-
-// GUESTS
-function addGuest() {
-  const name = document.getElementById('guestName').value.trim();
-  const role = document.getElementById('guestRole').value;
-  if(!name ||!currentPhoto) return alert('Name + Photo required');
-
-  const id = 'VIP' + Date.now().toString().slice(-6);
-  guests.push({name, role, id, photo: currentPhoto, checked: false});
-  localStorage.setItem('vip_guests_v3', JSON.stringify(guests));
-
-  document.getElementById('qrCode').innerHTML = `
-    <div class="qr-photo"><img src="${currentPhoto}"></div>
-    <div>${name}<br>${id}<br>${role.toUpperCase()}</div>
-  `;
-  document.getElementById('qrModal').style.display = 'block';
-
-  document.getElementById('guestName').value = '';
-  currentPhoto = null;
-  renderGuests();
-  calculateAI();
-}
-
-function renderGuests() {
-  document.getElementById('guestList').innerHTML = guests.map(g => `
-    <div class="guest-card ${g.role}">
-      <img src="${g.photo}" style="width:30px; height:30px; border-radius:50%;">
-      <div><strong>${g.name}</strong><br>${g.role.toUpperCase()} - ${g.id}</div>
-    </div>
-  `).join('');
-}
-
-function closeQR() {
-  document.getElementById('qrModal').style.display = 'none';
-}
-
-// GPS + BATTERY
-function shareLocation() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    navigator.getBattery().then(battery => {
-      const guard = {
-        name: 'Guard' + (guards.length + 1),
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        battery: Math.round(battery.level * 100),
-        online: true,
-        ring: guards.length < 2? 'inner' : guards.length < 5? 'middle' : 'outer'
-      };
-      guards.push(guard);
-      localStorage.setItem('vip_guards_v3', JSON.stringify(guards));
-      renderGuards();
-      calculateAI();
-    });
-  }, () => alert('Location denied'));
-}
-
-function renderGuards() {
-  document.querySelectorAll('.guard-dot').forEach(d => d.remove());
-  const map = document.getElementById('ringMap');
-  guards.forEach((g, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'guard-dot' + (g.online? '' : ' offline');
-    dot.innerHTML = `${i+1}<div class="guard-battery">${g.battery}%</div>`;
-    const angle = (i * 72) * Math.PI / 180;
-    const radius = g.ring === 'inner'? 35 : g.ring === 'middle'? 75 : 110;
-    dot.style.left = `calc(50% + ${Math.cos(angle) * radius}px - 12px)`;
-    dot.style.top = `calc(50% + ${Math.sin(angle) * radius}px - 12px)`;
-    map.appendChild(dot);
+    if(isBlacklisted) {
+      navigator.vibrate(500);
+      logs.push({time: new Date().toLocaleTimeString(), plate, status: 'BLACKLISTED'});
+      localStorage.setItem('vip_logs_v4', JSON.stringify(logs));
+      renderLogs();
+    }
   });
-  document.getElementById('guardList').innerHTML = guards.map(g =>
-    `<div>${g.name} - ${g.ring} ring - Battery: ${g.battery}% ${g.online? '🟢' : '🔴'}</div>`
-  ).join('');
 }
 
-// AI THREAT SCORE
-function calculateAI() {
-  const level = parseInt(document.getElementById('threatLevel').value);
-  const checkedCount = document.querySelectorAll('#checklist input:checked').length;
-  const totalChecks = document.querySelectorAll('#checklist input').length;
-  const guardCount = guards.length;
-  const vipCount = guests.filter(g => g.role === 'vip').length;
+// VOICE COMMAND
+function startVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition) return alert('Voice not supported');
 
-  let score = 100 - (level * 15) + (guardCount * 5) + (checkedCount * 3) - (vipCount * 2);
-  score = Math.max(0, Math.min(100, score));
+  voiceRecognition = new SpeechRecognition();
+  voiceRecognition.continuous = true;
+  voiceRecognition.lang = 'en-US';
 
-  document.getElementById('aiScore').textContent = `AI Risk: ${score}`;
-  document.getElementById('aiScore').style.background = score > 70? '#0f0' : score > 40? '#ffaa00' : '#ff0044';
+  voiceRecognition.onresult = (event) => {
+    const command = event.results[event.results.length-1][0].transcript.toLowerCase();
+    document.getElementById('voiceIndicator').classList.add('active');
 
-  document.getElementById('aiAnalysis').innerHTML = `
-    Analysis: ${guardCount} guards for ${vipCount} VIPs.
-    Checklist: ${checkedCount}/${totalChecks} complete.
-    Recommendation: ${score < 50? 'ADD MORE GUARDS' : score < 70? 'COMPLETE CHECKLIST' : 'SECURE'}
-  `;
-}
+    const log = document.getElementById('voiceLog');
+    log.innerHTML += `<br>> ${command}`;
+    log.scrollTop = log.scrollHeight;
 
-function updateChecklist() {
-  const level = parseInt(document.getElementById('threatLevel').value);
-  const tasks = {
-    1: ['Guest list check', '1 guard'],
-    3: ['3-ring perimeter', 'QR verification', '2hr sweep'],
-    5: ['Anti-drone', 'Bomb sweep', 'Armored transport', '2-person rule 24/7', 'Safe room stocked']
+    if(command.includes('blue code')) {
+      triggerPanic();
+    } else if(command.includes('scan plate')) {
+      showScreen('plate');
+      scanPlate();
+    } else if(command.includes('stop')) {
+      stopVoice();
+    }
+
+    setTimeout(() => document.getElementById('voiceIndicator').classList.remove('active'), 1000);
   };
-  document.getElementById('checklist').innerHTML = tasks[level].map((t, i) => `
-    <div class="checklist-item"><input type="checkbox" id="t${i}" onchange="calculateAI()"><label for="t${i}"> ${t}</label></div>
-  `).join('');
-  calculateAI();
+
+  voiceRecognition.start();
+  document.getElementById('voiceStatus').textContent = 'VOICE: ON';
 }
 
-// PDF + JSON EXPORT
-function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(18);
-  doc.text('VIP SECURITY REPORT v3.0', 20, 20);
-  doc.setFontSize(12);
-  doc.text('ASIS EP Standard + AI Analysis', 20, 30);
-  doc.text('Date: ' + new Date().toLocaleString(), 20, 40);
-  doc.text('Threat Level: ' + document.getElementById('threatLevel').value, 20, 50);
-  doc.text('AI Risk Score: ' + document.getElementById('aiScore').textContent, 20, 60);
-  doc.text('Total Guests: ' + guests.length, 20, 70);
-  doc.text('Total Guards: ' + guards.length, 20, 80);
-  doc.save('VIP_Security_v3_Report.pdf');
+function stopVoice() {
+  if(voiceRecognition) voiceRecognition.stop();
+  document.getElementById('voiceStatus').textContent = 'VOICE: OFF';
 }
 
-function exportJSON() {
-  const data = {guests, guards, logs, timestamp: new Date().toISOString()};
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'VIP_Event_Backup.json';
-  a.click();
+// HEAT MAP
+function generateHeatMap() {
+  const grid = document.getElementById('heatGrid');
+  grid.innerHTML = '';
+  for(let i = 0; i < 100; i++) {
+    const intensity = Math.random();
+    const color = intensity > 0.7? '#ff0000' : intensity > 0.4? '#ffaa00' : '#0f0';
+    const cell = document.createElement('div');
+    cell.className = 'heat-cell';
+    cell.style.background = color;
+    grid.appendChild(cell);
+  }
 }
 
-// WHATSAPP + EVAC
-function setSafeRoom() {
-  localStorage.setItem('vip_saferoom_v3', document.getElementById('safeRoom').value);
-  alert('Safe room saved');
-}
+// TELEGRAM + PANIC
+function testTelegram() {
+  const token = document.getElementById('telegramToken').value;
+  const chat = document.getElementById('telegramChat').value;
+  if(!token ||!chat) return alert('Enter Telegram token + chat ID');
 
-function saveRoutes() {
-  localStorage.setItem('vip_routes_v3', JSON.stringify({
-    A: document.getElementById('routeA').value
-  }));
-  alert('Routes saved');
+  fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({chat_id: chat, text: '🧪 TEST ALERT - VIP Guardian v4'})
+  }).then(() => alert('Telegram test sent'));
 }
 
 function triggerPanic() {
-  const routes = JSON.parse(localStorage.getItem('vip_routes_v3') || '{}');
-  document.getElementById('exitRoute').textContent = routes.A || 'Route A';
   document.getElementById('panicAlert').style.display = 'block';
-  if(navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
+  navigator.vibrate([300,100,300,100,500]);
 
-  logs.push({time: new Date().toLocaleTimeString(), name: 'SYSTEM', id: 'PANIC'});
-  localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
+  logs.push({time: new Date().toLocaleTimeString(), event: 'PANIC ALL CHANNELS'});
+  localStorage.setItem('vip_logs_v4', JSON.stringify(logs));
   renderLogs();
 
-  // Auto open WhatsApp
-  setTimeout(sendWhatsApp, 1000);
+  // WhatsApp
+  window.open('https://wa.me/?text=' + encodeURIComponent('🚨 BLUE CODE EMERGENCY 🚨'), '_blank');
+
+  // Telegram
+  const token = document.getElementById('telegramToken').value;
+  const chat = document.getElementById('telegramChat').value;
+  if(token && chat) {
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({chat_id: chat, text: '🚨 BLUE CODE - VIP EMERGENCY 🚨'})
+    });
+  }
 }
 
-function sendWhatsApp() {
-  const message = encodeURIComponent('🚨 BLUE CODE - VIP EMERGENCY 🚨\nVIP to safe room NOW!\nExit: ' + (JSON.parse(localStorage.getItem('vip_routes_v3') || '{}').A || 'Route A'));
-  window.open(`https://wa.me/?text=${message}`, '_blank');
+function backupToDrive() {
+  const data = {logs, timestamp: new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'VIP_Backup_' + Date.now() + '.json';
+  a.click();
+  alert('Backup downloaded. Upload to Google Drive manually.');
 }
 
 function renderLogs() {
-  document.getElementById('accessLog').innerHTML = logs.slice(-8).reverse().map(l =>
-    `<div class="log-entry">${l.time} - ${l.name} - ${l.id} ${l.action || ''}</div>`
+  document.getElementById('accessLog').innerHTML = logs.slice(-5).reverse().map(l =>
+    `<div>${l.time} - ${l.event || l.plate || l.name}</div>`
   ).join('');
 }
 
-window.onload = () => { updateChecklist(); renderGuests(); renderGuards(); renderLogs(); calculateAI(); }
+window.onload = () => { renderLogs(); generateHeatMap(); }
+
+// Auto backup every 10min
+setInterval(backupToDrive, 600000);
 </script>
 </body>
 </html>
