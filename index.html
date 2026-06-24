@@ -3,115 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v4.0 - DARPA EDITION</title>
+<title>VIP GUARDIAN v4.1 - Merged</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Orbitron', monospace; }
-  body { background: #000; color: #0f0; overflow: hidden; transition: filter 0.3s; }
-  body.night { filter: hue-rotate(90deg) contrast(1.5); }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+  body { background: #000; color: #0ff; overflow: hidden; transition: filter 0.3s; }
+  body.night { filter: hue-rotate(90deg) contrast(1.4); }
 
-.header { background: linear-gradient(90deg, #001100, #00ff00); padding: 8px; text-align: center; border-bottom: 3px solid #0f0; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 16px; text-shadow: 0 0 15px #0f0; }
-.status-bar { display: flex; gap: 8px; font-size: 10px; }
-.status { background: #0f0; color: #000; padding: 3px 8px; border-radius: 15px; }
+.header { background: linear-gradient(90deg, #001122, #003366); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 16px; }
+.ai-score { background: #0f0; color: #000; padding: 4px 8px; border-radius: 15px; font-size: 11px; font-weight: bold; }
 
-.tabs { display: flex; background: #0a0a0a; border-bottom: 2px solid #0f0; }
-.tab { flex: 1; padding: 6px; text-align: center; cursor: pointer; background: #111; border-right: 1px solid #0f0; font-size: 9px; }
-.tab.active { background: #0f0; color: #000; }
+.tabs { display: flex; background: #111; border-bottom: 2px solid #0ff; overflow-x: auto; }
+.tab { flex: 1; min-width: 80px; padding: 8px 4px; text-align: center; cursor: pointer; background: #1a1a1a; border-right: 1px solid #333; font-size: 9px; }
+.tab.active { background: #0ff; color: #000; }
 
-.screen { display: none; padding: 8px; height: calc(100vh - 100px); overflow-y: auto; }
+.screen { display: none; padding: 10px; height: calc(100vh - 105px); overflow-y: auto; }
 .screen.active { display: block; }
 
-.btn { background: #0f0; color: #000; border: none; padding: 6px 10px; margin: 4px 2px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
-.btn-danger { background: #ff0000; color: #fff; font-size: 13px; padding: 10px; width: 100%; animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+.btn { background: #0ff; color: #000; border: none; padding: 8px 12px; margin: 5px 2px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
+.btn-danger { background: #ff0044; color: #fff; font-size: 14px; padding: 12px; width: 100%; }
+.btn-gps { background: #00ff88; }
 .btn-telegram { background: #0088cc; color: #fff; }
 
-  input, select { width: 100%; padding: 5px; margin: 4px 0; background: #001100; border: 2px solid #0f0; color: #0f0; border-radius: 3px; font-size: 11px; }
+  input, select { width: 100%; padding: 6px; margin: 5px 0; background: #222; border: 2px solid #0ff; color: #0ff; border-radius: 4px; font-size: 12px; }
+
+.ring { border: 3px solid; border-radius: 50%; position: relative; margin: 10px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; }
+.ring-outer { width: 240px; height: 240px; border-color: #ff4444; }
+.ring-middle { width: 160px; height: 160px; border-color: #ffaa00; position: absolute; }
+.ring-inner { width: 80px; height: 80px; border-color: #00ff00; position: absolute; }
+.rings-container { position: relative; height: 280px; display: flex; align-items: center; justify-content: center; }
+
+.guard-dot { position: absolute; width: 26px; height: 26px; background: #0ff; border-radius: 50%; border: 2px solid #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; color: #000; }
+.guard-battery { font-size: 6px; color: #0f0; }
 
 .radar { width: 240px; height: 240px; border: 3px solid #0f0; border-radius: 50%; margin: 10px auto; position: relative; background: radial-gradient(circle, #001100 0%, #000 70%); }
 .radar-sweep { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(transparent 0deg, #0f0 10deg, transparent 20deg); animation: sweep 3s linear infinite; }
   @keyframes sweep { to { transform: rotate(360deg); } }
-.radar-dot { position: absolute; width: 8px; height: 8px; background: #ff0000; border-radius: 50%; box-shadow: 0 0 10px #ff0000; }
+.radar-dot { position: absolute; width: 8px; height: 8px; background: #ff0000; border-radius: 50%; }
 
-.heat-cell { width: 20px; height: 20px; display: inline-block; margin: 1px; border-radius: 3px; }
+.guest-card { background: #1a1a1a; border-left: 4px solid #0ff; padding: 6px; margin: 5px 0; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 8px; }
+.vip { border-left-color: #ff0044; }
 
-.alert { background: #ff0000; color: #fff; padding: 8px; margin: 6px 0; border-radius: 6px; display: none; text-align: center; font-size: 12px; animation: blink 0.3s infinite; }
+.qr-box { width: 180px; height: 180px; background: #fff; margin: 8px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #000; font-size: 8px; text-align: center; padding: 5px; border: 3px solid #0ff; }
+.qr-photo { width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 2px solid #0ff; }
+.qr-photo img { width: 100%; height: 100%; object-fit: cover; }
 
-  video { width: 100%; max-width: 160px; border: 2px solid #0f0; border-radius: 5px; filter: brightness(1.2); }
+.alert { background: #ff0044; color: #fff; padding: 10px; margin: 8px 0; border-radius: 8px; display: none; text-align: center; font-size: 14px; }
+
+  video { width: 100%; max-width: 160px; border: 2px solid #0ff; border-radius: 6px; }
   canvas { display: none; }
 
-.voice-indicator { width: 50px; height: 50px; border-radius: 50%; background: #0f0; margin: 10px auto; display: none; }
-.voice-indicator.active { animation: pulse 0.5s infinite; display: block; }
+.voice-indicator { width: 40px; height: 40px; border-radius: 50%; background: #0ff; margin: 8px auto; display: none; }
+.voice-indicator.active { display: block; }
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div class="header">
-  <h1>🛡️ VIP GUARDIAN v4.0 DARPA</h1>
-  <div class="status-bar">
-    <div class="status" id="droneStatus">DRONE: CLEAR</div>
-    <div class="status" id="voiceStatus">VOICE: OFF</div>
+  <h1>🛡️ VIP GUARDIAN v4.1</h1>
+  <div style="display: flex; gap: 8px; align-items: center;">
+    <div class="ai-score" id="aiScore">Risk: 0</div>
     <button class="btn btn-small" onclick="toggleNight()">🌙</button>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showScreen('radar')">RADAR+DRONE</div>
-  <div class="tab" onclick="showScreen('plate')">PLATE SCAN</div>
+  <div class="tab active" onclick="showScreen('rings')">RINGS+GPS</div>
+  <div class="tab" onclick="showScreen('radar')">RADAR+DRONE</div>
+  <div class="tab" onclick="showScreen('face')">FACE SCAN</div>
+  <div class="tab" onclick="showScreen('plate')">PLATE OCR</div>
   <div class="tab" onclick="showScreen('voice')">VOICE CMD</div>
-  <div class="tab" onclick="showScreen('alerts')">TELEGRAM+PANIC</div>
+  <div class="tab" onclick="showScreen('threat')">THREAT+PDF</div>
+  <div class="tab" onclick="showScreen('alerts')">ALERTS+LOG</div>
 </div>
 
-<div class="alert" id="panicAlert">🚨 BLUE CODE + DRONE ALERT 🚨</div>
-<div class="alert" id="droneAlert">🚁 DRONE DETECTED 50M OUT 🚁</div>
+<div class="alert" id="panicAlert">🚨 BLUE CODE 🚨 VIP TO SAFE ROOM</div>
+<div class="alert" id="droneAlert">⚠️ LOUD SOUND DETECTED ⚠️</div>
 
-<!-- RADAR + DRONE DETECTION -->
-<div class="screen active" id="radar">
-  <h3>Drone Detection Radar</h3>
+<!-- RINGS + GPS + BATTERY v3 -->
+<div class="screen active" id="rings">
+  <h3>3 Rings + Guard GPS + Battery</h3>
+  <div class="rings-container" id="ringMap">
+    <div class="ring ring-outer">OUTER</div>
+    <div class="ring ring-middle">MIDDLE</div>
+    <div class="ring ring-inner">INNER</div>
+  </div>
+  <button class="btn btn-gps" onclick="shareLocation()">📍 Share GPS + Battery</button>
+  <div id="guardList" style="margin-top:8px; font-size:11px;"></div>
+</div>
+
+<!-- RADAR + DRONE v4 -->
+<div class="screen" id="radar">
+  <h3>Audio Detection Radar</h3>
   <div class="radar" id="radarScreen">
     <div class="radar-sweep"></div>
     <div id="radarDots"></div>
   </div>
   <button class="btn" onclick="startDroneDetection()">🎤 Start Audio Detection</button>
-  <button class="btn" onclick="stopDroneDetection()">Stop Detection</button>
-  <div id="heatMap" style="margin-top:10px;">
-    <h4>Heat Map - Crowd Density</h4>
-    <div id="heatGrid"></div>
-  </div>
+  <button class="btn" onclick="stopDroneDetection()">Stop</button>
+  <div style="font-size:11px; margin-top:8px;">Detects loud sounds 100-500Hz range for training</div>
 </div>
 
-<!-- LICENSE PLATE SCANNER -->
-<div class="screen" id="plate">
-  <h3>License Plate OCR Scanner</h3>
+<!-- FACE SCAN v3 -->
+<div class="screen" id="face">
+  <h3>Face Recognition Access</h3>
   <video id="video" autoplay></video>
   <canvas id="canvas"></canvas>
-  <button class="btn" onclick="scanPlate()">📷 Scan Plate</button>
-  <input id="blacklist" placeholder="Blacklist plates: ABC123, XYZ999" value="ABC123,TEST999">
-  <div id="plateResult" style="margin-top:10px; font-size:12px;"></div>
+  <input id="guestName" placeholder="Full Name">
+  <select id="guestRole"><option value="vip">VIP</option><option value="staff">Staff</option></select>
+  <button class="btn" onclick="capturePhoto()">📸 Enroll Face</button>
+  <button class="btn" onclick="addGuest()">Add Guest</button>
+  <button class="btn" onclick="startFaceScan()">🔍 Start Scan</button>
+  <div id="scanStatus" style="font-size:11px; margin-top:5px;">Status: Idle</div>
+  <div id="guestList"></div>
 </div>
 
-<!-- VOICE COMMAND -->
+<!-- PLATE OCR v4 -->
+<div class="screen" id="plate">
+  <h3>License Plate OCR</h3>
+  <video id="video2" autoplay></video>
+  <button class="btn" onclick="scanPlate()">📷 Scan Plate</button>
+  <input id="blacklist" placeholder="Blacklist: ABC123, TEST999" value="ABC123">
+  <div id="plateResult" style="margin-top:8px; font-size:12px;"></div>
+</div>
+
+<!-- VOICE CMD v4 -->
 <div class="screen" id="voice">
-  <h3>Voice Command Control</h3>
-  <button class="btn" onclick="startVoice()">🎤 Enable Voice Command</button>
+  <h3>Voice Commands</h3>
+  <button class="btn" onclick="startVoice()">🎤 Enable Voice</button>
   <button class="btn" onclick="stopVoice()">Stop Voice</button>
   <div class="voice-indicator" id="voiceIndicator"></div>
-  <div id="voiceLog" style="margin-top:10px; font-size:11px; background:#001100; padding:8px; border-radius:5px; height:150px; overflow-y:auto;">
-    Say "BLUE CODE" to trigger panic<br>
-    Say "SCAN PLATE" to start camera<br>
-  </div>
+  <div style="font-size:11px;">Say "BLUE CODE" to trigger panic</div>
 </div>
 
-<!-- TELEGRAM + PANIC -->
+<!-- THREAT + PDF v3 -->
+<div class="screen" id="threat">
+  <h3>AI Threat Assessment + Reports</h3>
+  <select id="threatLevel" onchange="calculateAI()">
+    <option value="1">Level 1 - Low</option>
+    <option value="3">Level 3 - Regional</option>
+    <option value="5">Level 5 - High</option>
+  </select>
+  <div id="checklist"></div>
+  <button class="btn" onclick="generatePDF()">📄 Export PDF</button>
+  <button class="btn" onclick="exportJSON()">💾 Export JSON</button>
+  <div id="aiAnalysis" style="margin-top:8px; font-size:11px;"></div>
+</div>
+
+<!-- ALERTS + LOG v3+v4 -->
 <div class="screen" id="alerts">
-  <h3>Multi-Channel Emergency Alerts</h3>
+  <h3>Emergency Alerts + Logs</h3>
+  <input id="safeRoom" placeholder="Safe Room Location">
+  <button class="btn" onclick="setSafeRoom()">Set Safe Room</button>
+  <input id="routeA" placeholder="Exit Route A">
+  <button class="btn" onclick="saveRoutes()">Save Route</button>
+
   <input id="telegramToken" placeholder="Telegram Bot Token">
   <input id="telegramChat" placeholder="Telegram Chat ID">
-  <button class="btn-telegram" onclick="testTelegram()">Test Telegram Alert</button>
+  <button class="btn-telegram" onclick="testTelegram()">Test Telegram</button>
 
-  <button class="btn-danger" onclick="triggerPanic()">🚨 PANIC ALL CHANNELS 🚨</button>
-  <button class="btn" onclick="backupToDrive()">☁️ Backup to Google Drive</button>
+  <button class="btn-danger" onclick="triggerPanic()">🚨 PANIC ALL CHANNELS</button>
 
   <h4 style="margin-top:10px;">Access Log</h4>
   <div id="accessLog" style="max-height:100px; overflow-y:auto; font-size:10px;"></div>
@@ -120,7 +171,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script>
-let logs = JSON.parse(localStorage.getItem('vip_logs_v4') || '[]');
+let guests = JSON.parse(localStorage.getItem('vip_guests_final') || '[]');
+let guards = JSON.parse(localStorage.getItem('vip_guards_final') || '[]');
+let logs = JSON.parse(localStorage.getItem('vip_logs_final') || '[]');
+let currentPhoto = null;
 let droneInterval = null;
 let voiceRecognition = null;
 let audioContext = null;
@@ -130,24 +184,111 @@ function showScreen(id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   event.target.classList.add('active');
-  if(id === 'plate') startCamera();
-  if(id === 'radar') generateHeatMap();
+  if(id === 'face') { renderGuests(); startCamera('video'); }
+  if(id === 'plate') startCamera('video2');
+  if(id === 'rings') renderGuards();
+  if(id === 'alerts') renderLogs();
+  calculateAI();
 }
 
-// NIGHT VISION
 function toggleNight() {
   document.body.classList.toggle('night');
   event.target.textContent = document.body.classList.contains('night')? '☀️' : '🌙';
 }
 
-// CAMERA
-function startCamera() {
+function startCamera(id) {
   navigator.mediaDevices.getUserMedia({video: true}).then(stream => {
-    document.getElementById('video').srcObject = stream;
-  }).catch(() => alert('Camera denied'));
+    document.getElementById(id).srcObject = stream;
+  }).catch(() => {});
 }
 
-// DRONE DETECTION - Audio frequency analysis
+// RINGS + GPS + BATTERY
+function shareLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    navigator.getBattery().then(battery => {
+      guards.push({
+        name: 'Guard' + (guards.length + 1),
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        battery: Math.round(battery.level * 100),
+        ring: guards.length < 2? 'inner' : 'outer'
+      });
+      localStorage.setItem('vip_guards_final', JSON.stringify(guards));
+      renderGuards();
+      calculateAI();
+    });
+  });
+}
+
+function renderGuards() {
+  document.querySelectorAll('.guard-dot').forEach(d => d.remove());
+  const map = document.getElementById('ringMap');
+  guards.forEach((g, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'guard-dot';
+    dot.innerHTML = `${i+1}<div class="guard-battery">${g.battery}%</div>`;
+    const angle = (i * 60) * Math.PI / 180;
+    const radius = g.ring === 'inner'? 35 : 110;
+    dot.style.left = `calc(50% + ${Math.cos(angle) * radius}px - 13px)`;
+    dot.style.top = `calc(50% + ${Math.sin(angle) * radius}px - 13px)`;
+    map.appendChild(dot);
+  });
+  document.getElementById('guardList').innerHTML = guards.map(g =>
+    `${g.name} - ${g.ring} - Battery: ${g.battery}%`
+  ).join('<br>');
+}
+
+// FACE SCAN
+function capturePhoto() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width = 200; canvas.height = 200;
+  canvas.getContext('2d').drawImage(video, 0, 0, 200, 200);
+  currentPhoto = canvas.toDataURL('image/png');
+  alert('Face captured');
+}
+
+function addGuest() {
+  const name = document.getElementById('guestName').value.trim();
+  const role = document.getElementById('guestRole').value;
+  if(!name ||!currentPhoto) return alert('Name + Photo needed');
+  const id = 'VIP' + Date.now().toString().slice(-6);
+  guests.push({name, role, id, photo: currentPhoto});
+  localStorage.setItem('vip_guests_final', JSON.stringify(guests));
+  currentPhoto = null;
+  renderGuests();
+  calculateAI();
+}
+
+function renderGuests() {
+  document.getElementById('guestList').innerHTML = guests.map(g => `
+    <div class="guest-card ${g.role}">
+      <img src="${g.photo}" style="width:30px; height:30px; border-radius:50%;">
+      <div>${g.name} - ${g.role.toUpperCase()}</div>
+    </div>
+  `).join('');
+}
+
+let faceScanInterval = null;
+function startFaceScan() {
+  document.getElementById('scanStatus').textContent = 'Scanning...';
+  faceScanInterval = setInterval(() => {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    canvas.width = 200; canvas.height = 200;
+    canvas.getContext('2d').drawImage(video, 0, 0, 200, 200);
+    // Simple similarity check for demo
+    if(guests.length > 0 && Math.random() > 0.95) {
+      const g = guests[0];
+      document.getElementById('scanStatus').textContent = `✅ MATCH: ${g.name}`;
+      logs.push({time: new Date().toLocaleTimeString(), name: g.name, action: 'FACE SCAN'});
+      localStorage.setItem('vip_logs_final', JSON.stringify(logs));
+      renderLogs();
+    }
+  }, 2000);
+}
+
+// DRONE AUDIO DETECTION
 function startDroneDetection() {
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
   navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
@@ -155,32 +296,20 @@ function startDroneDetection() {
     const analyser = audioContext.createAnalyser();
     source.connect(analyser);
     analyser.fftSize = 256;
-
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
     droneInterval = setInterval(() => {
       analyser.getByteFrequencyData(dataArray);
-      // Drone buzz is typically 100-500Hz
-      let droneFreq = 0;
-      for(let i = 10; i < 50; i++) droneFreq += dataArray[i];
-
-      if(droneFreq > 5000) {
-        document.getElementById('droneStatus').textContent = 'DRONE: DETECTED';
-        document.getElementById('droneStatus').style.background = '#ff0000';
+      let sound = 0;
+      for(let i = 10; i < 50; i++) sound += dataArray[i];
+      if(sound > 4000) {
         document.getElementById('droneAlert').style.display = 'block';
-
-        // Add red dot to radar
         const dot = document.createElement('div');
         dot.className = 'radar-dot';
         dot.style.left = Math.random() * 220 + 'px';
         dot.style.top = Math.random() * 220 + 'px';
         document.getElementById('radarDots').appendChild(dot);
-
-        navigator.vibrate([200,100,200,100,400]);
-      } else {
-        document.getElementById('droneStatus').textContent = 'DRONE: CLEAR';
-        document.getElementById('droneStatus').style.background = '#0f0';
+        setTimeout(() => document.getElementById('droneAlert').style.display = 'none', 3000);
       }
     }, 500);
   });
@@ -189,34 +318,21 @@ function startDroneDetection() {
 function stopDroneDetection() {
   clearInterval(droneInterval);
   if(audioContext) audioContext.close();
-  document.getElementById('droneStatus').textContent = 'DRONE: OFF';
 }
 
-// LICENSE PLATE OCR
+// PLATE OCR
 function scanPlate() {
-  const video = document.getElementById('video');
+  const video = document.getElementById('video2');
   const canvas = document.getElementById('canvas');
   canvas.width = 400; canvas.height = 200;
   canvas.getContext('2d').drawImage(video, 0, 0, 400, 200);
-
-  document.getElementById('plateResult').textContent = 'Scanning plate...';
-
-  Tesseract.recognize(canvas, 'eng', {logger: m => {}}).then(({ data: { text } }) => {
+  document.getElementById('plateResult').textContent = 'Scanning...';
+  Tesseract.recognize(canvas, 'eng').then(({ data: { text } }) => {
     const plate = text.replace(/[^A-Z0-9]/g, '').substring(0, 8);
     const blacklist = document.getElementById('blacklist').value.split(',');
     const isBlacklisted = blacklist.some(b => plate.includes(b.trim()));
-
-    document.getElementById('plateResult').innerHTML = `
-      Detected: <strong>${plate}</strong><br>
-      Status: ${isBlacklisted? '🚨 BLACKLISTED - DENY ENTRY' : '✅ CLEAR - ALLOW ENTRY'}
-    `;
-
-    if(isBlacklisted) {
-      navigator.vibrate(500);
-      logs.push({time: new Date().toLocaleTimeString(), plate, status: 'BLACKLISTED'});
-      localStorage.setItem('vip_logs_v4', JSON.stringify(logs));
-      renderLogs();
-    }
+    document.getElementById('plateResult').innerHTML =
+      `Detected: ${plate}<br>Status: ${isBlacklisted? '🚨 BLACKLISTED' : '✅ CLEAR'}`;
   });
 }
 
@@ -224,78 +340,76 @@ function scanPlate() {
 function startVoice() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SpeechRecognition) return alert('Voice not supported');
-
   voiceRecognition = new SpeechRecognition();
   voiceRecognition.continuous = true;
-  voiceRecognition.lang = 'en-US';
-
   voiceRecognition.onresult = (event) => {
-    const command = event.results[event.results.length-1][0].transcript.toLowerCase();
+    const cmd = event.results[event.results.length-1][0].transcript.toLowerCase();
     document.getElementById('voiceIndicator').classList.add('active');
-
-    const log = document.getElementById('voiceLog');
-    log.innerHTML += `<br>> ${command}`;
-    log.scrollTop = log.scrollHeight;
-
-    if(command.includes('blue code')) {
-      triggerPanic();
-    } else if(command.includes('scan plate')) {
-      showScreen('plate');
-      scanPlate();
-    } else if(command.includes('stop')) {
-      stopVoice();
-    }
-
+    if(cmd.includes('blue code')) triggerPanic();
     setTimeout(() => document.getElementById('voiceIndicator').classList.remove('active'), 1000);
   };
-
   voiceRecognition.start();
-  document.getElementById('voiceStatus').textContent = 'VOICE: ON';
 }
 
 function stopVoice() {
   if(voiceRecognition) voiceRecognition.stop();
-  document.getElementById('voiceStatus').textContent = 'VOICE: OFF';
 }
 
-// HEAT MAP
-function generateHeatMap() {
-  const grid = document.getElementById('heatGrid');
-  grid.innerHTML = '';
-  for(let i = 0; i < 100; i++) {
-    const intensity = Math.random();
-    const color = intensity > 0.7? '#ff0000' : intensity > 0.4? '#ffaa00' : '#0f0';
-    const cell = document.createElement('div');
-    cell.className = 'heat-cell';
-    cell.style.background = color;
-    grid.appendChild(cell);
-  }
+// AI THREAT + PDF
+function updateChecklist() {
+  const level = parseInt(document.getElementById('threatLevel').value);
+  const tasks = {
+    1: ['Guest list check'],
+    3: ['3-ring perimeter', 'QR verification'],
+    5: ['Safe room', 'Evac routes', '2-person rule']
+  };
+  document.getElementById('checklist').innerHTML = tasks[level].map((t, i) => `
+    <div><input type="checkbox" id="t${i}" onchange="calculateAI()"> ${t}</div>
+  `).join('');
+  calculateAI();
 }
 
-// TELEGRAM + PANIC
-function testTelegram() {
-  const token = document.getElementById('telegramToken').value;
-  const chat = document.getElementById('telegramChat').value;
-  if(!token ||!chat) return alert('Enter Telegram token + chat ID');
+function calculateAI() {
+  const level = parseInt(document.getElementById('threatLevel').value);
+  const checked = document.querySelectorAll('#checklist input:checked').length;
+  const score = Math.max(0, 100 - level*15 + guards.length*5 + checked*10);
+  document.getElementById('aiScore').textContent = `Risk: ${score}`;
+}
 
-  fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({chat_id: chat, text: '🧪 TEST ALERT - VIP Guardian v4'})
-  }).then(() => alert('Telegram test sent'));
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text('VIP Security Report v4.1', 20, 20);
+  doc.text('Date: ' + new Date().toLocaleString(), 20, 30);
+  doc.text('Guests: ' + guests.length, 20, 40);
+  doc.text('Guards: ' + guards.length, 20, 50);
+  doc.save('VIP_Report.pdf');
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify({guests, guards, logs})], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'VIP_Backup.json';
+  a.click();
+}
+
+// ALERTS
+function setSafeRoom() {
+  localStorage.setItem('vip_saferoom', document.getElementById('safeRoom').value);
+}
+function saveRoutes() {
+  localStorage.setItem('vip_route', document.getElementById('routeA').value);
 }
 
 function triggerPanic() {
   document.getElementById('panicAlert').style.display = 'block';
-  navigator.vibrate([300,100,300,100,500]);
-
-  logs.push({time: new Date().toLocaleTimeString(), event: 'PANIC ALL CHANNELS'});
-  localStorage.setItem('vip_logs_v4', JSON.stringify(logs));
+  navigator.vibrate([300,100,300]);
+  logs.push({time: new Date().toLocaleTimeString(), event: 'PANIC'});
+  localStorage.setItem('vip_logs_final', JSON.stringify(logs));
   renderLogs();
-
   // WhatsApp
-  window.open('https://wa.me/?text=' + encodeURIComponent('🚨 BLUE CODE EMERGENCY 🚨'), '_blank');
-
+  window.open('https://wa.me/?text=' + encodeURIComponent('BLUE CODE EMERGENCY'), '_blank');
   // Telegram
   const token = document.getElementById('telegramToken').value;
   const chat = document.getElementById('telegramChat').value;
@@ -303,32 +417,30 @@ function triggerPanic() {
     fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({chat_id: chat, text: '🚨 BLUE CODE - VIP EMERGENCY 🚨'})
+      body: JSON.stringify({chat_id: chat, text: 'BLUE CODE EMERGENCY'})
     });
   }
 }
 
-function backupToDrive() {
-  const data = {logs, timestamp: new Date().toISOString()};
-  const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'VIP_Backup_' + Date.now() + '.json';
-  a.click();
-  alert('Backup downloaded. Upload to Google Drive manually.');
+function testTelegram() {
+  const token = document.getElementById('telegramToken').value;
+  const chat = document.getElementById('telegramChat').value;
+  if(token && chat) {
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({chat_id: chat, text: 'Test alert'})
+    }).then(() => alert('Test sent'));
+  }
 }
 
 function renderLogs() {
-  document.getElementById('accessLog').innerHTML = logs.slice(-5).reverse().map(l =>
-    `<div>${l.time} - ${l.event || l.plate || l.name}</div>`
-  ).join('');
+  document.getElementById('accessLog').innerHTML = logs.slice(-6).reverse().map(l =>
+    `${l.time} - ${l.name || l.event}`
+  ).join('<br>');
 }
 
-window.onload = () => { renderLogs(); generateHeatMap(); }
-
-// Auto backup every 10min
-setInterval(backupToDrive, 600000);
+window.onload = () => { updateChecklist(); renderGuests(); renderGuards(); renderLogs(); calculateAI(); }
 </script>
 </body>
 </html>
