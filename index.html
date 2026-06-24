@@ -2,103 +2,267 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini NFS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Mini NFS Mobile</title>
 <style>
-  body { margin: 0; background: #1a1a1a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial; }
-  canvas { border: 3px solid #00b4d8; border-radius: 12px; box-shadow: 0 0 30px rgba(0,180,216,0.4); }
-  .hud { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; }
-  .controls { position: absolute; bottom: 20px; color: #aaa; font-size: 14px; }
+    * { touch-action: manipulation; user-select: none; }
+  body { margin: 0; background: #0a0a0a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Arial Black', Arial; overflow: hidden; }
+  canvas { border: 3px solid #00b4d8; border-radius: 16px; box-shadow: 0 0 30px rgba(0,180,216,0.6); max-width: 100vw; max-height: 70vh; }
+
+ .hud { position: absolute; top: 10px; left: 10px; color: #0ff; background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 10px; border: 2px solid #00b4d8; font-size: 14px; text-shadow: 0 0 8px #0ff; }
+ .track-select { position: absolute; top: 10px; right: 10px; color: #ff0; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 10px; border: 2px solid #ff0; font-size: 12px; }
+
+  /* MOBILE CONTROLS */
+ .controls { position: absolute; bottom: 0; width: 100%; height: 30vh; pointer-events: none; }
+ .btn { position: absolute; width: 70px; height: 70px; background: rgba(255,255,255,0.15); border: 3px solid rgba(0,180,216,0.8); border-radius: 50%; color: white; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; pointer-events: all; backdrop-filter: blur(5px); }
+ .btn:active { background: rgba(0,180,216,0.5); transform: scale(0.9); }
+
+  #btn-up { bottom: 120px; left: 50%; transform: translateX(-50%); }
+  #btn-down { bottom: 30px; left: 50%; transform: translateX(-50%); }
+  #btn-left { bottom: 75px; left: 20px; }
+  #btn-right { bottom: 75px; right: 20px; }
+  #btn-reset { top: 150px; right: 20px; width: 50px; height: 50px; font-size: 14px; border-color: #ff0; }
+
+  @media (orientation: landscape) {
+    canvas { max-height: 85vh; }
+   .controls { height: 20vh; }
+    #btn-up { bottom: 80px; }
+    #btn-down { bottom: 10px; }
+    #btn-left { bottom: 45px; left: 40px; }
+    #btn-right { bottom: 45px; right: 40px; }
+  }
 </style>
 </head>
 <body>
 <div class="hud">
-  <div>Speed: <span id="speed">0</span> km/h</div>
-  <div>Lap: <span id="lap">0/3</span></div>
-  <div>Time: <span id="time">0.00</span>s</div>
+  <div>SPEED: <span id="speed">0</span> km/h</div>
+  <div>LAP: <span id="lap">0/3</span></div>
+  <div>TIME: <span id="time">0.00</span>s</div>
+  <div>POS: <span id="pos">1/3</span></div>
 </div>
-<div class="controls">W/↑ = Gas | S/↓ = Brake | A/← D/→ = Steer | R = Reset</div>
-<canvas id="game" width="800" height="600"></canvas>
+<div class="track-select">TRACK: <span id="track">1</span> | Tap 1/2/3 buttons</div>
+
+<canvas id="game"></canvas>
+
+<!-- MOBILE BUTTONS -->
+<div class="controls">
+  <div class="btn" id="btn-up">↑</div>
+  <div class="btn" id="btn-down">↓</div>
+  <div class="btn" id="btn-left">←</div>
+  <div class="btn" id="btn-right">→</div>
+  <div class="btn" id="btn-reset">R</div>
+  <div style="position:absolute; bottom:5px; width:100%; text-align:center; color:#666; font-size:11px;">Tap 1/2/3 top-right to change track</div>
+</div>
 
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-let car = { x: 400, y: 500, angle: -Math.PI/2, speed: 0, maxSpeed: 8, accel: 0.2, friction: 0.95 };
-let keys = {};
-let lap = 0;
-let startTime = Date.now();
-let checkpoint = { x: 400, y: 100, passed: false };
+// Responsive canvas
+function resizeCanvas() {
+  let size = Math.min(window.innerWidth * 0.95, 900);
+  let height = window.innerHeight * 0.7;
+  canvas.width = size;
+  canvas.height = height;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+const tracks = [
+  { name: "Oval", inner: {x:100,y:80,w:canvas.width-200,h:canvas.height-160}, start: {x:canvas.width/2,y:canvas.height-80} },
+  { name: "Figure8", inner: {x:150,y:60,w:canvas.width-300,h:canvas.height-120}, start: {x:canvas.width/2,y:canvas.height-60} },
+  { name: "Square", inner: {x:80,y:60,w:canvas.width-160,h:canvas.height-120}, start: {x:canvas.width/2,y:canvas.height-60} }
+];
+let currentTrack = 0;
+
+let tireMarks = [];
+let driftParticles = [];
+
+let player = { x:450, y:550, angle:-Math.PI/2, speed:0, maxSpeed:9, accel:0.25, friction:0.96, color:'#ff0040', lap:0, checkpoint:false };
+let ai1 = { x:420, y:550, angle:-Math.PI/2, speed:6, maxSpeed:8, accel:0.2, friction:0.96, color:'#00aaff', lap:0, checkpoint:false };
+let ai2 = { x:480, y:550, angle:-Math.PI/2, speed:6, maxSpeed:7.8, accel:0.19, friction:0.96, color:'#ffaa00', lap:0, checkpoint:false };
+let cars = [player, ai1, ai2];
+
+let keys = {};
+let startTime = Date.now();
+let checkpoint = { x:450, y:80, passed:false };
+
+// MOBILE TOUCH CONTROLS
+function setKey(key, val) {
+  keys[key] = val;
+  if (val && key === 'audio') {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+['btn-up','btn-down','btn-left','btn-right'].forEach(id => {
+  let key = { 'btn-up':'w', 'btn-down':'s', 'btn-left':'a', 'btn-right':'d' }[id];
+  let btn = document.getElementById(id);
+  btn.addEventListener('touchstart', e => { e.preventDefault(); setKey(key,true); setKey('audio',true); });
+  btn.addEventListener('touchend', e => { e.preventDefault(); setKey(key,false); });
+  btn.addEventListener('mousedown', () => setKey(key,true));
+  btn.addEventListener('mouseup', () => setKey(key,false));
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => reset());
+
+// Keyboard still works on desktop
+document.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key >= '1' && e.key <= '3') {
+    currentTrack = parseInt(e.key) - 1;
+    updateTrack();
+    document.getElementById('track').textContent = e.key;
+  }
+});
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-function update() {
-  // Controls
-  if (keys['w'] || keys['arrowup']) car.speed += car.accel;
-  if (keys['s'] || keys['arrowdown']) car.speed -= car.accel * 1.5;
-  if (keys['a'] || keys['arrowleft']) car.angle -= 0.05 * (car.speed / car.maxSpeed);
-  if (keys['d'] || keys['arrowright']) car.angle += 0.05 * (car.speed / car.maxSpeed);
-  if (keys['r']) reset();
+let audioCtx;
+function playEngine(speed) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.frequency.value = 80 + speed * 15;
+  gain.gain.value = 0.015 + speed * 0.002;
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.08);
+}
+
+function updateTrack() {
+  let t = tracks[currentTrack].inner;
+  t.x = 80; t.y = 60; t.w = canvas.width-160; t.h = canvas.height-120;
+  tracks[currentTrack].start = {x:canvas.width/2, y:canvas.height-60};
+  checkpoint = { x:canvas.width/2, y:70, passed:false };
+}
+
+function updateCar(car, isPlayer) {
+  if (isPlayer) {
+    if (keys['w']) car.speed += car.accel;
+    if (keys['s']) car.speed -= car.accel * 1.6;
+    if (keys['a']) car.angle -= 0.06 * (Math.abs(car.speed) / car.maxSpeed);
+    if (keys['d']) car.angle += 0.06 * (Math.abs(car.speed) / car.maxSpeed);
+    if (Math.abs(car.speed) > 6) playEngine(Math.abs(car.speed));
+  } else {
+    let targetX = canvas.width/2 + Math.sin(Date.now()/2000 + car.lap) * (canvas.width/3);
+    let targetAngle = Math.atan2(canvas.height/3 - car.y, targetX - car.x);
+    car.angle += (targetAngle - car.angle) * 0.05;
+    car.speed = car.maxSpeed * 0.9;
+  }
+
+  let drifting = Math.abs(car.speed) > 5 && (keys['a'] || keys['d']);
+  if (drifting && isPlayer) {
+    for(let i=0; i<2; i++) {
+      driftParticles.push({x: car.x - Math.cos(car.angle)*12, y: car.y - Math.sin(car.angle)*12, life:20});
+      tireMarks.push({x: car.x - Math.cos(car.angle)*12, y: car.y - Math.sin(car.angle)*12, life:100});
+    }
+  }
 
   car.speed *= car.friction;
   car.speed = Math.max(-car.maxSpeed/2, Math.min(car.speed, car.maxSpeed));
-  
+
   car.x += Math.cos(car.angle) * car.speed;
   car.y += Math.sin(car.angle) * car.speed;
 
-  // Track borders
-  if (car.x < 50 || car.x > 750 || car.y < 50 || car.y > 550) {
-    car.speed *= 0.5; // slow down on grass
+  let t = tracks[currentTrack].inner;
+  if (car.x < t.x || car.x > t.x + t.w || car.y < t.y || car.y > t.y + t.h) {
+    car.speed *= 0.6;
   }
 
-  // Checkpoint + Lap
   let dist = Math.hypot(car.x - checkpoint.x, car.y - checkpoint.y);
-  if (dist < 30 && !checkpoint.passed) {
-    checkpoint.passed = true;
-    lap++;
-    if (lap > 3) reset();
+  if (dist < 35 &&!car.checkpoint) {
+    car.checkpoint = true;
+    car.lap++;
+    if (car.lap > 3 && isPlayer) reset();
   }
-  if (dist > 50) checkpoint.passed = false;
-
-  // HUD
-  document.getElementById('speed').textContent = Math.floor(Math.abs(car.speed * 20));
-  document.getElementById('lap').textContent = Math.min(lap, 3) + '/3';
-  document.getElementById('time').textContent = ((Date.now() - startTime) / 1000).toFixed(2);
+  if (dist > 60) car.checkpoint = false;
 }
 
-function draw() {
-  // Track
-  ctx.fillStyle = '#2d5016';
-  ctx.fillRect(0, 0, 800, 600);
-  ctx.fillStyle = '#444';
-  ctx.fillRect(50, 50, 700, 500);
-  
-  // Track lines
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([20, 20]);
-  ctx.strokeRect(50, 50, 700, 500);
-  ctx.setLineDash([]);
-  
-  // Checkpoint
-  ctx.fillStyle = checkpoint.passed ? '#00ff00' : '#ff0';
-  ctx.fillRect(checkpoint.x - 30, checkpoint.y - 5, 60, 10);
-
-  // Car
+function drawCar(car) {
   ctx.save();
   ctx.translate(car.x, car.y);
   ctx.rotate(car.angle);
-  ctx.fillStyle = '#ff3b3b';
-  ctx.fillRect(-15, -8, 30, 16);
-  ctx.fillStyle = '#1b4965';
-  ctx.fillRect(-10, -5, 20, 10);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.ellipse(2, 3, 16, 9, 0, 0, Math.PI*2);
+
+  ctx.fillStyle = car.color;
+  ctx.beginPath();
+  ctx.roundRect(-14, -8, 28, 16, 5);
+  ctx.fill();
+
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.roundRect(-9, -4, 18, 8, 3);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffff88';
+  ctx.fillRect(10, -5, 3, 2);
+  ctx.fillRect(10, 3, 3, 2);
+
   ctx.restore();
 }
 
+function draw() {
+  updateTrack();
+  let t = tracks[currentTrack].inner;
+
+  ctx.fillStyle = '#0a2a0a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#555';
+  ctx.fillRect(t.x-40, t.y-40, t.w+80, t.h+80);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(t.x, t.y, t.w, t.h);
+
+  ctx.strokeStyle = 'rgba(50,50,50,0.5)';
+  ctx.lineWidth = 3;
+  tireMarks = tireMarks.filter(m => m.life-- > 0);
+  tireMarks.forEach(m => {
+    ctx.beginPath();
+    ctx.moveTo(m.x, m.y);
+    ctx.lineTo(m.x + Math.random()*4-2, m.y + Math.random()*4-2);
+    ctx.stroke();
+  });
+
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 4;
+  ctx.setLineDash([20, 20]);
+  ctx.strokeRect(t.x-40, t.y-40, t.w+80, t.h+80);
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = checkpoint.passed? '#0f0' : '#ff0';
+  ctx.fillRect(checkpoint.x - 30, checkpoint.y - 5, 60, 10);
+
+  driftParticles = driftParticles.filter(p => p.life-- > 0);
+  driftParticles.forEach(p => {
+    ctx.fillStyle = `rgba(200,200,200,${p.life/20})`;
+    ctx.beginPath();
+    ctx.arc(p.x + Math.random()*8-4, p.y + Math.random()*8-4, 6, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  cars.forEach(c => drawCar(c));
+}
+
+function update() {
+  if (keys['r']) reset();
+  cars.forEach((c, i) => updateCar(c, i===0));
+
+  let sorted = [...cars].sort((a,b) => b.lap - a.lap || b.y - a.y);
+  let pos = sorted.indexOf(player) + 1;
+
+  document.getElementById('speed').textContent = Math.floor(Math.abs(player.speed * 22));
+  document.getElementById('lap').textContent = Math.min(player.lap, 3) + '/3';
+  document.getElementById('time').textContent = ((Date.now() - startTime) / 1000).toFixed(2);
+  document.getElementById('pos').textContent = pos + '/3';
+}
+
 function reset() {
-  car.x = 400; car.y = 500; car.angle = -Math.PI/2; car.speed = 0;
-  lap = 0; startTime = Date.now(); checkpoint.passed = false;
+  let start = tracks[currentTrack].start;
+  player.x = start.x; player.y = start.y; player.angle = -Math.PI/2; player.speed = 0; player.lap = 0;
+  ai1.x = start.x-30; ai1.y = start.y; ai1.lap = 0;
+  ai2.x = start.x+30; ai2.y = start.y; ai2.lap = 0;
+  startTime = Date.now(); tireMarks = []; driftParticles = [];
 }
 
 function gameLoop() {
@@ -109,4 +273,4 @@ function gameLoop() {
 gameLoop();
 </script>
 </body>
-  </html>
+</html>
