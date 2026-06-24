@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>SA Racer Ultimate Pro</title>
+<title>SA Racer Ultimate v2</title>
 <style>
     * { margin: 0; padding: 0; touch-action: none; }
   body { background: #000; overflow: hidden; font-family: 'Orbitron', Arial; }
@@ -156,87 +156,105 @@ function generateCity(type) {
 }
 generateCity('pretoria');
 
-// PLAYER CAR - UNLAUGHABLE VERSION
+// UNBREAKABLE CAR - NO IMAGES NEEDED
 const car = new THREE.Group();
 
-// Metallic body
-const bodyMat = new THREE.MeshStandardMaterial({
-  color: 0xff0033,
-  metalness: 0.95,
-  roughness: 0.05,
-  emissive: 0x330000
-});
-const body = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.3, 7.2), bodyMat);
+// Main body - metallic red
+const body = new THREE.Mesh(
+  new THREE.BoxGeometry(3.6, 1.3, 7.2),
+  new THREE.MeshStandardMaterial({ color: 0xdd0022, metalness: 0.9, roughness: 0.1 })
+);
 body.position.y = 0.9;
 car.add(body);
 
-// Racing stripe
+// White racing stripe
 const stripe = new THREE.Mesh(
-  new THREE.BoxGeometry(0.7, 1.32, 7.2),
-  new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.5 })
+  new THREE.BoxGeometry(0.8, 1.35, 7.2),
+  new THREE.MeshStandardMaterial({ color: 0xffffff })
 );
-stripe.position.y = 0.02;
+stripe.position.y = 0.05;
 car.add(stripe);
 
-// Spoiler
-const spoiler = new THREE.Mesh(
-  new THREE.BoxGeometry(3.9, 0.35, 1.2),
-  new THREE.MeshStandardMaterial({ color: 0x111, metalness: 0.9 })
+// Black roof
+const roof = new THREE.Mesh(
+  new THREE.BoxGeometry(3.2, 0.7, 3),
+  new THREE.MeshStandardMaterial({ color: 0x111 })
 );
-spoiler.position.set(0, 1.65, 3.4);
+roof.position.y = 1.8;
+roof.position.z = -1;
+car.add(roof);
+
+// Rear spoiler
+const spoiler = new THREE.Mesh(
+  new THREE.BoxGeometry(4, 0.4, 1.3),
+  new THREE.MeshStandardMaterial({ color: 0x222, metalness: 0.8 })
+);
+spoiler.position.set(0, 1.7, 3.5);
 car.add(spoiler);
 
-// Windshield
+// Windshield glass
 const glass = new THREE.Mesh(
-  new THREE.BoxGeometry(3.3, 0.95, 3),
-  new THREE.MeshPhysicalMaterial({ color: 0x4a90e2, transparent: true, opacity: 0.35, roughness: 0 })
+  new THREE.BoxGeometry(3.1, 0.8, 2.5),
+  new THREE.MeshPhysicalMaterial({ color: 0x88ccff, transparent: true, opacity: 0.3 })
 );
-glass.position.y = 1.85;
-glass.position.z = -1.1;
+glass.position.y = 1.75;
+glass.position.z = -1.2;
 car.add(glass);
 
 // Glowing headlights
-const headLight = new THREE.Mesh(
-  new THREE.SphereGeometry(0.45, 16, 16),
-  new THREE.MeshBasicMaterial({ color: 0xffffdd })
-);
-headLight.position.set(1.5, 0.85, -3.4);
-car.add(headLight);
-car.add(headLight.clone().translateX(-3));
-const headGlow = new THREE.PointLight(0xffffaa, 2, 15);
-headGlow.position.set(1.5, 0.85, -3.4);
-car.add(headGlow);
-car.add(headGlow.clone().translateX(-3));
+for(let x of [-1.4, 1.4]) {
+  const light = new THREE.Mesh(
+    new THREE.SphereGeometry(0.45, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xffffaa })
+  );
+  light.position.set(x, 0.8, -3.5);
+  car.add(light);
+  
+  const glow = new THREE.PointLight(0xffffaa, 3, 20);
+  glow.position.set(x, 0.8, -3.5);
+  car.add(glow);
+}
 
-// Taillights
-const tailLight = new THREE.Mesh(
-  new THREE.SphereGeometry(0.35, 16, 16),
-  new THREE.MeshBasicMaterial({ color: 0xff0000 })
-);
-tailLight.position.set(1.5, 0.85, 3.4);
-car.add(tailLight);
-car.add(tailLight.clone().translateX(-3));
+// Red taillights
+for(let x of [-1.4, 1.4]) {
+  const light = new THREE.Mesh(
+    new THREE.SphereGeometry(0.4, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+  );
+  light.position.set(x, 0.8, 3.5);
+  car.add(light);
+}
 
-// Wheels with rims
+// Wheels with silver rims
 let wheels = [];
 for (let x of [-1.9, 1.9]) {
   for (let z of [-2.7, 2.7]) {
-    const wheelGroup = new THREE.Group();
-    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 0.75, 20),
-      new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.9 }));
+    const group = new THREE.Group();
+    
+    // Black tire
+    const tire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.9, 0.9, 0.8, 20),
+      new THREE.MeshStandardMaterial({ color: 0x080808 })
+    );
     tire.rotation.z = Math.PI / 2;
-    wheelGroup.add(tire);
-
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.8, 6),
-      new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.95, roughness: 0.1 }));
-    rim.rotation.z = Math.PI / 2;
-    wheelGroup.add(rim);
-
-    wheelGroup.position.set(x, 0.55, z);
-    car.add(wheelGroup);
-    wheels.push(wheelGroup);
+    group.add(tire);
+    
+    // 5-spoke silver rim
+    for(let i=0; i<5; i++) {
+      const spoke = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 0.6, 0.9),
+        new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 1 })
+      );
+      spoke.rotation.z = (i/5) * Math.PI * 2;
+      group.add(spoke);
+    }
+    
+    group.position.set(x, 0.6, z);
+    car.add(group);
+    wheels.push(group);
   }
 }
+
 car.position.set(0, 0, 0);
 scene.add(car);
 
@@ -310,17 +328,16 @@ function animate() {
   car.position.x = turn * 20;
   wheels.forEach(w => w.rotation.x += speed * 0.95);
 
-  // Speed lines effect
-  if (speed > 0.9) {
-    for(let i=0; i<2; i++) {
-      const streak = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 0.3, 8),
-        new THREE.MeshBasicMaterial({ color: 0x88ffff, transparent: true, opacity: 0.7 })
-      );
-      streak.position.set((Math.random()-0.5)*65, 1+Math.random()*4, car.position.z - 15 - Math.random()*25);
-      scene.add(streak);
-      setTimeout(() => scene.remove(streak), 150);
-    }
+  // SPEED LINES WHEN NITRO
+if (speed > 1.0 && Math.random() > 0.6) {
+  const line = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.4, 10),
+    new THREE.MeshBasicMaterial({ color: 0x88ffff, transparent: true, opacity: 0.8 })
+  );
+  line.position.set((Math.random()-0.5)*70, 2+Math.random()*3, car.position.z - 20);
+  scene.add(line);
+  setTimeout(() => scene.remove(line), 120);
+}
   }
 
   // Clouds move
