@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v3.1 + Plate Scanner</title>
+<title>VIP GUARDIAN v3.2 + Reset Mode</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
   body { background: #000; color: #0ff; overflow: hidden; transition: all 0.3s; }
@@ -24,6 +24,7 @@
 .btn-danger { background: #ff0044; color: #fff; font-size: 14px; padding: 12px; width: 100%; }
 .btn-gps { background: #00ff88; }
 .btn-whatsapp { background: #25D366; color: #fff; }
+.btn-reset { background: #8B0000; color: #fff; border: 2px solid #ff0044; }
 
   input, select { width: 100%; padding: 6px; margin: 5px 0; background: #222; border: 2px solid #0ff; color: #0ff; border-radius: 4px; font-size: 12px; }
   body.light input, body.light select { background: #fff; color: #000; border-color: #003; }
@@ -57,12 +58,15 @@
 
 .face-box { position: absolute; border: 3px solid #0f0; display: none; }
 .scan-status { color: #0f0; font-size: 11px; margin-top: 5px; }
+
+.reset-section { background: #220000; border: 2px solid #ff0044; padding: 10px; margin-top: 15px; border-radius: 8px; }
+.reset-warning { color: #ff6666; font-size: 10px; margin: 5px 0; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>🛡️ VIP GUARDIAN v3.1</h1>
+  <h1>🛡️ VIP GUARDIAN v3.2</h1>
   <div style="display: flex; gap: 10px; align-items: center;">
     <div class="ai-score" id="aiScore">AI Risk: 0</div>
     <button class="btn btn-small" onclick="toggleTheme()">🌙</button>
@@ -122,7 +126,7 @@
   </div>
 </div>
 
-<!-- PLATE OCR - NEW -->
+<!-- PLATE OCR -->
 <div class="screen" id="plate">
   <h3>License Plate Scanner</h3>
   <video id="videoPlate" autoplay></video>
@@ -147,7 +151,7 @@
   <div id="aiAnalysis" style="margin-top:10px; font-size:11px; color:#0f0;"></div>
 </div>
 
-<!-- WHATSAPP + LOG -->
+<!-- WHATSAPP + LOG + RESET -->
 <div class="screen" id="evac">
   <h3>Emergency Comms + Access Log</h3>
   <input id="safeRoom" placeholder="Safe Room Location">
@@ -160,12 +164,20 @@
   <button class="btn-whatsapp" onclick="sendWhatsApp()">📱 Test WhatsApp Message</button>
 
   <h4 style="margin-top:12px;">Access Log</h4>
-  <div id="accessLog" style="max-height:120px; overflow-y:auto;"></div>
+  <div id="accessLog" style="max-height:100px; overflow-y:auto;"></div>
+
+  <!-- RESET SECTION -->
+  <div class="reset-section">
+    <h4 style="color: #ff0044;">⚠️ DANGER ZONE - Event Reset</h4>
+    <div class="reset-warning">This will permanently delete ALL guests, guards, logs, and settings. Cannot be undone.</div>
+    <button class="btn btn-reset" onclick="resetEvent()">🔒 RESET EVENT DATA</button>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script>
+const RESET_PASSWORD = 'ADMIN123'; // Change this to your own password
 let guests = JSON.parse(localStorage.getItem('vip_guests_v3') || '[]');
 let guards = JSON.parse(localStorage.getItem('vip_guards_v3') || '[]');
 let logs = JSON.parse(localStorage.getItem('vip_logs_v3') || '[]');
@@ -181,6 +193,53 @@ function showScreen(id) {
   if(id === 'plate') startCamera('videoPlate');
   if(id === 'rings') renderGuards();
   if(id === 'evac') renderLogs();
+  calculateAI();
+}
+
+// RESET EVENT FUNCTION - PASSWORD PROTECTED
+function resetEvent() {
+  const password = prompt('🔒 ENTER ADMIN PASSWORD TO RESET EVENT:\nDefault: ADMIN123');
+  if(password === null) return; // User cancelled
+
+  if(password!== RESET_PASSWORD) {
+    alert('❌ WRONG PASSWORD - Reset cancelled');
+    return;
+  }
+
+  const confirm1 = confirm('⚠️ WARNING: This will delete ALL event data!\nGuests: ' + guests.length + '\nGuards: ' + guards.length + '\nLogs: ' + logs.length + '\n\nContinue?');
+  if(!confirm1) return;
+
+  const confirm2 = confirm('🚨 FINAL CONFIRMATION:\nThis action CANNOT be undone.\nType OK in next prompt to proceed.');
+  if(!confirm2) return;
+
+  const finalCheck = prompt('Type "OK" to confirm reset:');
+  if(finalCheck!== 'OK') {
+    alert('Reset cancelled');
+    return;
+  }
+
+  // Log the reset before wiping
+  const resetLog = {time: new Date().toLocaleTimeString(), name: 'SYSTEM', id: 'RESET', action: 'EVENT RESET'};
+  localStorage.setItem('vip_logs_v3', JSON.stringify([resetLog]));
+
+  // Clear all data
+  localStorage.removeItem('vip_guests_v3');
+  localStorage.removeItem('vip_guards_v3');
+  localStorage.removeItem('vip_logs_v3');
+  localStorage.removeItem('vip_saferoom_v3');
+  localStorage.removeItem('vip_routes_v3');
+
+  // Reset arrays
+  guests = [];
+  guards = [];
+  logs = [];
+
+  alert('✅ EVENT RESET COMPLETE\nAll data has been wiped.');
+
+  // Refresh UI
+  renderGuests();
+  renderGuards();
+  renderLogs();
   calculateAI();
 }
 
@@ -275,7 +334,7 @@ function closeQR() {
   document.getElementById('qrModal').style.display = 'none';
 }
 
-// PLATE OCR - NEW FUNCTION
+// PLATE OCR
 function scanPlate() {
   const video = document.getElementById('videoPlate');
   const canvas = document.getElementById('canvasPlate');
@@ -382,7 +441,7 @@ function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.setFontSize(18);
-  doc.text('VIP SECURITY REPORT v3.1', 20, 20);
+  doc.text('VIP SECURITY REPORT v3.2', 20, 20);
   doc.setFontSize(12);
   doc.text('ASIS EP Standard + AI Analysis', 20, 30);
   doc.text('Date: ' + new Date().toLocaleString(), 20, 40);
@@ -390,7 +449,7 @@ function generatePDF() {
   doc.text('AI Risk Score: ' + document.getElementById('aiScore').textContent, 20, 60);
   doc.text('Total Guests: ' + guests.length, 20, 70);
   doc.text('Total Guards: ' + guards.length, 20, 80);
-  doc.save('VIP_Security_v3.1_Report.pdf');
+  doc.save('VIP_Security_v3.2_Report.pdf');
 }
 
 function exportJSON() {
