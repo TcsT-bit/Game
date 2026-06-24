@@ -3,33 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Mini NFS Mobile</title>
+<title>Mini NFS Mobile Fixed</title>
 <style>
-    * { touch-action: manipulation; user-select: none; }
-  body { margin: 0; background: #0a0a0a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Arial Black', Arial; overflow: hidden; }
-  canvas { border: 3px solid #00b4d8; border-radius: 16px; box-shadow: 0 0 30px rgba(0,180,216,0.6); max-width: 100vw; max-height: 70vh; }
+    * { touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: #0a0a0a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial; overflow: hidden; }
+  canvas { border: 3px solid #00b4d8; border-radius: 16px; box-shadow: 0 0 30px rgba(0,180,216,0.6); max-width: 100vw; max-height: 65vh; display: block; }
 
- .hud { position: absolute; top: 10px; left: 10px; color: #0ff; background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 10px; border: 2px solid #00b4d8; font-size: 14px; text-shadow: 0 0 8px #0ff; }
- .track-select { position: absolute; top: 10px; right: 10px; color: #ff0; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 10px; border: 2px solid #ff0; font-size: 12px; }
+.hud { position: absolute; top: 8px; left: 8px; color: #0ff; background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 8px; border: 2px solid #00b4d8; font-size: 12px; font-weight: bold; }
+.track-select { position: absolute; top: 8px; right: 8px; color: #ff0; background: rgba(0,0,0,0.85); padding: 6px 10px; border-radius: 8px; border: 2px solid #ff0; font-size: 11px; font-weight: bold; }
 
-  /* MOBILE CONTROLS */
- .controls { position: absolute; bottom: 0; width: 100%; height: 30vh; pointer-events: none; }
- .btn { position: absolute; width: 70px; height: 70px; background: rgba(255,255,255,0.15); border: 3px solid rgba(0,180,216,0.8); border-radius: 50%; color: white; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; pointer-events: all; backdrop-filter: blur(5px); }
- .btn:active { background: rgba(0,180,216,0.5); transform: scale(0.9); }
+  /* BIGGER MOBILE CONTROLS */
+.controls { position: absolute; bottom: 0; width: 100%; height: 35vh; pointer-events: none; }
+.btn { position: absolute; width: 85px; height: 85px; background: rgba(0,180,216,0.25); border: 4px solid #00b4d8; border-radius: 50%; color: white; font-size: 32px; font-weight: bold; display: flex; align-items: center; justify-content: center; pointer-events: all; backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+.btn:active { background: rgba(0,180,216,0.6); transform: scale(0.92); }
 
-  #btn-up { bottom: 120px; left: 50%; transform: translateX(-50%); }
-  #btn-down { bottom: 30px; left: 50%; transform: translateX(-50%); }
-  #btn-left { bottom: 75px; left: 20px; }
-  #btn-right { bottom: 75px; right: 20px; }
-  #btn-reset { top: 150px; right: 20px; width: 50px; height: 50px; font-size: 14px; border-color: #ff0; }
+  #btn-up { bottom: 140px; left: 50%; transform: translateX(-50%); }
+  #btn-down { bottom: 35px; left: 50%; transform: translateX(-50%); }
+  #btn-left { bottom: 87px; left: 25px; }
+  #btn-right { bottom: 87px; right: 25px; }
+  #btn-reset { top: 120px; right: 15px; width: 60px; height: 60px; font-size: 18px; border-color: #ff0; background: rgba(255,255,0,0.25); }
 
   @media (orientation: landscape) {
-    canvas { max-height: 85vh; }
-   .controls { height: 20vh; }
-    #btn-up { bottom: 80px; }
-    #btn-down { bottom: 10px; }
-    #btn-left { bottom: 45px; left: 40px; }
-    #btn-right { bottom: 45px; right: 40px; }
+    canvas { max-height: 80vh; }
+  .controls { height: 25vh; }
+    #btn-up { bottom: 100px; }
+    #btn-down { bottom: 20px; }
+    #btn-left { bottom: 60px; left: 50px; }
+    #btn-right { bottom: 60px; right: 50px; }
+    #btn-reset { top: 80px; }
   }
 </style>
 </head>
@@ -40,79 +41,73 @@
   <div>TIME: <span id="time">0.00</span>s</div>
   <div>POS: <span id="pos">1/3</span></div>
 </div>
-<div class="track-select">TRACK: <span id="track">1</span> | Tap 1/2/3 buttons</div>
+<div class="track-select">TRACK: <span id="trackNum">1</span></div>
 
 <canvas id="game"></canvas>
 
-<!-- MOBILE BUTTONS -->
 <div class="controls">
   <div class="btn" id="btn-up">↑</div>
   <div class="btn" id="btn-down">↓</div>
   <div class="btn" id="btn-left">←</div>
   <div class="btn" id="btn-right">→</div>
   <div class="btn" id="btn-reset">R</div>
-  <div style="position:absolute; bottom:5px; width:100%; text-align:center; color:#666; font-size:11px;">Tap 1/2/3 top-right to change track</div>
 </div>
 
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-// Responsive canvas
+let currentTrack = 0;
+let tireMarks = [];
+let driftParticles = [];
+let keys = {};
+let startTime = Date.now();
+let checkpoint = { x:0, y:0, passed:false };
+
+// Resize canvas for phone
 function resizeCanvas() {
-  let size = Math.min(window.innerWidth * 0.95, 900);
-  let height = window.innerHeight * 0.7;
-  canvas.width = size;
-  canvas.height = height;
+  canvas.width = Math.min(window.innerWidth * 0.95, 900);
+  canvas.height = window.innerHeight * 0.65;
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-const tracks = [
-  { name: "Oval", inner: {x:100,y:80,w:canvas.width-200,h:canvas.height-160}, start: {x:canvas.width/2,y:canvas.height-80} },
-  { name: "Figure8", inner: {x:150,y:60,w:canvas.width-300,h:canvas.height-120}, start: {x:canvas.width/2,y:canvas.height-60} },
-  { name: "Square", inner: {x:80,y:60,w:canvas.width-160,h:canvas.height-120}, start: {x:canvas.width/2,y:canvas.height-60} }
-];
-let currentTrack = 0;
+// Tracks - positions calculated each frame now
+function getTrack(trackId) {
+  let w = canvas.width, h = canvas.height;
+  if (trackId === 0) return { inner:{x:60,y:50,w:w-120,h:h-100}, start:{x:w/2,y:h-70} };
+  if (trackId === 1) return { inner:{x:80,y:40,w:w-160,h:h-80}, start:{x:w/2,y:h-60} };
+  return { inner:{x:50,y:40,w:w-100,h:h-80}, start:{x:w/2,y:h-60} };
+}
 
-let tireMarks = [];
-let driftParticles = [];
-
-let player = { x:450, y:550, angle:-Math.PI/2, speed:0, maxSpeed:9, accel:0.25, friction:0.96, color:'#ff0040', lap:0, checkpoint:false };
-let ai1 = { x:420, y:550, angle:-Math.PI/2, speed:6, maxSpeed:8, accel:0.2, friction:0.96, color:'#00aaff', lap:0, checkpoint:false };
-let ai2 = { x:480, y:550, angle:-Math.PI/2, speed:6, maxSpeed:7.8, accel:0.19, friction:0.96, color:'#ffaa00', lap:0, checkpoint:false };
+let player = { x:0, y:0, angle:-Math.PI/2, speed:0, maxSpeed:9, accel:0.25, friction:0.96, color:'#ff0040', lap:0, checkpoint:false };
+let ai1 = { x:0, y:0, angle:-Math.PI/2, speed:6, maxSpeed:8, accel:0.2, friction:0.96, color:'#00aaff', lap:0, checkpoint:false };
+let ai2 = { x:0, y:0, angle:-Math.PI/2, speed:6, maxSpeed:7.8, accel:0.19, friction:0.96, color:'#ffaa00', lap:0, checkpoint:false };
 let cars = [player, ai1, ai2];
 
-let keys = {};
-let startTime = Date.now();
-let checkpoint = { x:450, y:80, passed:false };
-
-// MOBILE TOUCH CONTROLS
+// MOBILE BUTTONS
 function setKey(key, val) {
   keys[key] = val;
-  if (val && key === 'audio') {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  if (val &&!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 }
 
 ['btn-up','btn-down','btn-left','btn-right'].forEach(id => {
   let key = { 'btn-up':'w', 'btn-down':'s', 'btn-left':'a', 'btn-right':'d' }[id];
   let btn = document.getElementById(id);
-  btn.addEventListener('touchstart', e => { e.preventDefault(); setKey(key,true); setKey('audio',true); });
+  btn.addEventListener('touchstart', e => { e.preventDefault(); setKey(key,true); });
   btn.addEventListener('touchend', e => { e.preventDefault(); setKey(key,false); });
   btn.addEventListener('mousedown', () => setKey(key,true));
   btn.addEventListener('mouseup', () => setKey(key,false));
 });
-
 document.getElementById('btn-reset').addEventListener('click', () => reset());
 
-// Keyboard still works on desktop
+// Keyboard + track switch
 document.addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
   if (e.key >= '1' && e.key <= '3') {
     currentTrack = parseInt(e.key) - 1;
-    updateTrack();
-    document.getElementById('track').textContent = e.key;
+    reset();
+    document.getElementById('trackNum').textContent = e.key;
   }
 });
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -129,14 +124,8 @@ function playEngine(speed) {
   osc.stop(audioCtx.currentTime + 0.08);
 }
 
-function updateTrack() {
-  let t = tracks[currentTrack].inner;
-  t.x = 80; t.y = 60; t.w = canvas.width-160; t.h = canvas.height-120;
-  tracks[currentTrack].start = {x:canvas.width/2, y:canvas.height-60};
-  checkpoint = { x:canvas.width/2, y:70, passed:false };
-}
-
 function updateCar(car, isPlayer) {
+  let t = getTrack(currentTrack);
   if (isPlayer) {
     if (keys['w']) car.speed += car.accel;
     if (keys['s']) car.speed -= car.accel * 1.6;
@@ -160,12 +149,10 @@ function updateCar(car, isPlayer) {
 
   car.speed *= car.friction;
   car.speed = Math.max(-car.maxSpeed/2, Math.min(car.speed, car.maxSpeed));
-
   car.x += Math.cos(car.angle) * car.speed;
   car.y += Math.sin(car.angle) * car.speed;
 
-  let t = tracks[currentTrack].inner;
-  if (car.x < t.x || car.x > t.x + t.w || car.y < t.y || car.y > t.y + t.h) {
+  if (car.x < t.inner.x || car.x > t.inner.x + t.inner.w || car.y < t.inner.y || car.y > t.inner.y + t.inner.h) {
     car.speed *= 0.6;
   }
 
@@ -199,20 +186,19 @@ function drawCar(car) {
   ctx.fillStyle = '#ffff88';
   ctx.fillRect(10, -5, 3, 2);
   ctx.fillRect(10, 3, 3, 2);
-
   ctx.restore();
 }
 
 function draw() {
-  updateTrack();
-  let t = tracks[currentTrack].inner;
+  let t = getTrack(currentTrack);
+  checkpoint = { x:canvas.width/2, y:t.inner.y + 20, passed:false };
 
   ctx.fillStyle = '#0a2a0a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#555';
-  ctx.fillRect(t.x-40, t.y-40, t.w+80, t.h+80);
+  ctx.fillRect(t.inner.x-40, t.inner.y-40, t.inner.w+80, t.inner.h+80);
   ctx.fillStyle = '#222';
-  ctx.fillRect(t.x, t.y, t.w, t.h);
+  ctx.fillRect(t.inner.x, t.inner.y, t.inner.w, t.inner.h);
 
   ctx.strokeStyle = 'rgba(50,50,50,0.5)';
   ctx.lineWidth = 3;
@@ -227,10 +213,10 @@ function draw() {
   ctx.strokeStyle = 'white';
   ctx.lineWidth = 4;
   ctx.setLineDash([20, 20]);
-  ctx.strokeRect(t.x-40, t.y-40, t.w+80, t.h+80);
+  ctx.strokeRect(t.inner.x-40, t.inner.y-40, t.inner.w+80, t.inner.h+80);
   ctx.setLineDash([]);
 
-  ctx.fillStyle = checkpoint.passed? '#0f0' : '#ff0';
+  ctx.fillStyle = '#ff0';
   ctx.fillRect(checkpoint.x - 30, checkpoint.y - 5, 60, 10);
 
   driftParticles = driftParticles.filter(p => p.life-- > 0);
@@ -258,12 +244,14 @@ function update() {
 }
 
 function reset() {
-  let start = tracks[currentTrack].start;
-  player.x = start.x; player.y = start.y; player.angle = -Math.PI/2; player.speed = 0; player.lap = 0;
-  ai1.x = start.x-30; ai1.y = start.y; ai1.lap = 0;
-  ai2.x = start.x+30; ai2.y = start.y; ai2.lap = 0;
+  let t = getTrack(currentTrack);
+  player.x = t.start.x; player.y = t.start.y; player.angle = -Math.PI/2; player.speed = 0; player.lap = 0; player.checkpoint = false;
+  ai1.x = t.start.x-30; ai1.y = t.start.y; ai1.angle = -Math.PI/2; ai1.lap = 0; ai1.checkpoint = false;
+  ai2.x = t.start.x+30; ai2.y = t.start.y; ai2.angle = -Math.PI/2; ai2.lap = 0; ai2.checkpoint = false;
   startTime = Date.now(); tireMarks = []; driftParticles = [];
 }
+
+reset(); // spawn cars correctly first time
 
 function gameLoop() {
   update();
