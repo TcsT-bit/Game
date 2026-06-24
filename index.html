@@ -3,45 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Mini NFS Mobile Fixed</title>
+<title>Street Racer 3D</title>
 <style>
     * { touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent; }
-  body { margin: 0; background: #0a0a0a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial; overflow: hidden; }
-  canvas { border: 3px solid #00b4d8; border-radius: 16px; box-shadow: 0 0 30px rgba(0,180,216,0.6); max-width: 100vw; max-height: 65vh; display: block; }
+  body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Arial Black', Arial; }
+  canvas { border: 3px solid #00b4d8; border-radius: 12px; box-shadow: 0 0 30px rgba(0,180,216,0.7); max-width: 100vw; max-height: 75vh; }
 
-.hud { position: absolute; top: 8px; left: 8px; color: #0ff; background: rgba(0,0,0,0.85); padding: 8px 12px; border-radius: 8px; border: 2px solid #00b4d8; font-size: 12px; font-weight: bold; }
-.track-select { position: absolute; top: 8px; right: 8px; color: #ff0; background: rgba(0,0,0,0.85); padding: 6px 10px; border-radius: 8px; border: 2px solid #ff0; font-size: 11px; font-weight: bold; }
+ .hud { position: absolute; top: 15px; left: 15px; color: #0ff; background: rgba(0,0,0,0.8); padding: 12px 18px; border-radius: 10px; border: 2px solid #00b4d8; font-size: 16px; text-shadow: 0 0 8px #0ff; font-weight: bold; }
+ .hud div { margin: 3px 0; }
 
-  /* BIGGER MOBILE CONTROLS */
-.controls { position: absolute; bottom: 0; width: 100%; height: 35vh; pointer-events: none; }
-.btn { position: absolute; width: 85px; height: 85px; background: rgba(0,180,216,0.25); border: 4px solid #00b4d8; border-radius: 50%; color: white; font-size: 32px; font-weight: bold; display: flex; align-items: center; justify-content: center; pointer-events: all; backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
-.btn:active { background: rgba(0,180,216,0.6); transform: scale(0.92); }
-
-  #btn-up { bottom: 140px; left: 50%; transform: translateX(-50%); }
-  #btn-down { bottom: 35px; left: 50%; transform: translateX(-50%); }
-  #btn-left { bottom: 87px; left: 25px; }
-  #btn-right { bottom: 87px; right: 25px; }
-  #btn-reset { top: 120px; right: 15px; width: 60px; height: 60px; font-size: 18px; border-color: #ff0; background: rgba(255,255,0,0.25); }
+  /* Mobile controls */
+ .controls { position: absolute; bottom: 0; width: 100%; height: 30vh; pointer-events: none; }
+ .btn { position: absolute; width: 90px; height: 90px; background: rgba(0,180,216,0.3); border: 4px solid #00b4d8; border-radius: 50%; color: white; font-size: 36px; font-weight: bold; display: flex; align-items: center; justify-content: center; pointer-events: all; backdrop-filter: blur(6px); box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+ .btn:active { background: rgba(0,180,216,0.7); transform: scale(0.9); }
+  #btn-up { bottom: 130px; left: 50%; transform: translateX(-50%); }
+  #btn-down { bottom: 25px; left: 50%; transform: translateX(-50%); }
+  #btn-left { bottom: 77px; left: 30px; }
+  #btn-right { bottom: 77px; right: 30px; }
+  #btn-boost { top: 130px; right: 20px; width: 70px; height: 70px; font-size: 16px; border-color: #ff0; background: rgba(255,255,0,0.3); }
 
   @media (orientation: landscape) {
-    canvas { max-height: 80vh; }
-  .controls { height: 25vh; }
-    #btn-up { bottom: 100px; }
-    #btn-down { bottom: 20px; }
-    #btn-left { bottom: 60px; left: 50px; }
-    #btn-right { bottom: 60px; right: 50px; }
-    #btn-reset { top: 80px; }
+    canvas { max-height: 85vh; }
+   .controls { height: 22vh; }
+    #btn-up { bottom: 95px; }
+    #btn-down { bottom: 15px; }
+    #btn-left { bottom: 55px; left: 60px; }
+    #btn-right { bottom: 55px; right: 60px; }
   }
 </style>
 </head>
 <body>
 <div class="hud">
   <div>SPEED: <span id="speed">0</span> km/h</div>
-  <div>LAP: <span id="lap">0/3</span></div>
   <div>TIME: <span id="time">0.00</span>s</div>
-  <div>POS: <span id="pos">1/3</span></div>
+  <div>DISTANCE: <span id="dist">0</span>m</div>
 </div>
-<div class="track-select">TRACK: <span id="trackNum">1</span></div>
 
 <canvas id="game"></canvas>
 
@@ -50,46 +46,48 @@
   <div class="btn" id="btn-down">↓</div>
   <div class="btn" id="btn-left">←</div>
   <div class="btn" id="btn-right">→</div>
-  <div class="btn" id="btn-reset">R</div>
+  <div class="btn" id="btn-boost">NITRO</div>
 </div>
 
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-let currentTrack = 0;
-let tireMarks = [];
-let driftParticles = [];
-let keys = {};
-let startTime = Date.now();
-let checkpoint = { x:0, y:0, passed:false };
-
-// Resize canvas for phone
-function resizeCanvas() {
+// Responsive canvas
+function resize() {
   canvas.width = Math.min(window.innerWidth * 0.95, 900);
-  canvas.height = window.innerHeight * 0.65;
+  canvas.height = window.innerHeight * 0.75;
 }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+resize();
+window.addEventListener('resize', resize);
 
-// Tracks - positions calculated each frame now
-function getTrack(trackId) {
-  let w = canvas.width, h = canvas.height;
-  if (trackId === 0) return { inner:{x:60,y:50,w:w-120,h:h-100}, start:{x:w/2,y:h-70} };
-  if (trackId === 1) return { inner:{x:80,y:40,w:w-160,h:h-80}, start:{x:w/2,y:h-60} };
-  return { inner:{x:50,y:40,w:w-100,h:h-80}, start:{x:w/2,y:h-60} };
+// Game state
+let playerX = 0; // -1 to 1, left to right
+let playerSpeed = 0;
+let maxSpeed = 12;
+let accel = 0.3;
+let friction = 0.98;
+let distance = 0;
+let startTime = Date.now();
+let nitro = 100;
+let boost = false;
+
+// Road segments for 3D effect
+let segments = [];
+let segLength = 200;
+let rumbleLength = 3;
+let trackLength = 500;
+
+// Generate road with curves + hills
+for (let i = 0; i < trackLength; i++) {
+  let angle = Math.sin(i / 30) * 0.5; // curves
+  let y = Math.sin(i / 50) * 100; // hills
+  segments.push({ curve: angle, y: y });
 }
 
-let player = { x:0, y:0, angle:-Math.PI/2, speed:0, maxSpeed:9, accel:0.25, friction:0.96, color:'#ff0040', lap:0, checkpoint:false };
-let ai1 = { x:0, y:0, angle:-Math.PI/2, speed:6, maxSpeed:8, accel:0.2, friction:0.96, color:'#00aaff', lap:0, checkpoint:false };
-let ai2 = { x:0, y:0, angle:-Math.PI/2, speed:6, maxSpeed:7.8, accel:0.19, friction:0.96, color:'#ffaa00', lap:0, checkpoint:false };
-let cars = [player, ai1, ai2];
-
-// MOBILE BUTTONS
-function setKey(key, val) {
-  keys[key] = val;
-  if (val &&!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
+// Mobile + keyboard controls
+let keys = {};
+function setKey(key, val) { keys[key] = val; }
 
 ['btn-up','btn-down','btn-left','btn-right'].forEach(id => {
   let key = { 'btn-up':'w', 'btn-down':'s', 'btn-left':'a', 'btn-right':'d' }[id];
@@ -99,163 +97,198 @@ function setKey(key, val) {
   btn.addEventListener('mousedown', () => setKey(key,true));
   btn.addEventListener('mouseup', () => setKey(key,false));
 });
-document.getElementById('btn-reset').addEventListener('click', () => reset());
+document.getElementById('btn-boost').addEventListener('touchstart', () => boost = true);
+document.getElementById('btn-boost').addEventListener('touchend', () => boost = false);
 
-// Keyboard + track switch
-document.addEventListener('keydown', e => {
-  keys[e.key.toLowerCase()] = true;
-  if (e.key >= '1' && e.key <= '3') {
-    currentTrack = parseInt(e.key) - 1;
-    reset();
-    document.getElementById('trackNum').textContent = e.key;
-  }
-});
+document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-let audioCtx;
-function playEngine(speed) {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.frequency.value = 80 + speed * 15;
-  gain.gain.value = 0.015 + speed * 0.002;
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.08);
+// Projection math for 3D
+function project(p, camX, camY, camZ) {
+  let scale = camZ / (p.z - camZ);
+  p.X = (1 + scale * (p.x - camX)) * canvas.width / 2;
+  p.Y = (1 - scale * (p.y - camY)) * canvas.height / 2;
+  p.scale = scale;
 }
 
-function updateCar(car, isPlayer) {
-  let t = getTrack(currentTrack);
-  if (isPlayer) {
-    if (keys['w']) car.speed += car.accel;
-    if (keys['s']) car.speed -= car.accel * 1.6;
-    if (keys['a']) car.angle -= 0.06 * (Math.abs(car.speed) / car.maxSpeed);
-    if (keys['d']) car.angle += 0.06 * (Math.abs(car.speed) / car.maxSpeed);
-    if (Math.abs(car.speed) > 6) playEngine(Math.abs(car.speed));
-  } else {
-    let targetX = canvas.width/2 + Math.sin(Date.now()/2000 + car.lap) * (canvas.width/3);
-    let targetAngle = Math.atan2(canvas.height/3 - car.y, targetX - car.x);
-    car.angle += (targetAngle - car.angle) * 0.05;
-    car.speed = car.maxSpeed * 0.9;
+function drawRoad() {
+  let camZ = playerSpeed * 20;
+  let camY = 1500;
+  let baseSegment = Math.floor(distance / segLength) % segments.length;
+
+  // Sky gradient
+  let skyGrad = ctx.createLinearGradient(0,0,0,canvas.height*0.5);
+  skyGrad.addColorStop(0, '#87CEEB');
+  skyGrad.addColorStop(1, '#1e3c72');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0,0,canvas.width,canvas.height*0.5);
+
+  // Buildings in background
+  ctx.fillStyle = '#2a2a2a';
+  for(let i=0; i<20; i++) {
+    let x = (i * 200 - distance*0.1) % (canvas.width + 200) - 100;
+    let h = 100 + Math.sin(i) * 50;
+    ctx.fillRect(x, canvas.height*0.5 - h, 80, h);
+    // Windows
+    ctx.fillStyle = '#ff0';
+    for(let j=0; j<h/20; j++) {
+      ctx.fillRect(x+10, canvas.height*0.5 - h + j*20 + 5, 10, 10);
+      ctx.fillRect(x+60, canvas.height*0.5 - h + j*20 + 5, 10, 10);
+    }
+    ctx.fillStyle = '#2a2a2a';
   }
 
-  let drifting = Math.abs(car.speed) > 5 && (keys['a'] || keys['d']);
-  if (drifting && isPlayer) {
-    for(let i=0; i<2; i++) {
-      driftParticles.push({x: car.x - Math.cos(car.angle)*12, y: car.y - Math.sin(car.angle)*12, life:20});
-      tireMarks.push({x: car.x - Math.cos(car.angle)*12, y: car.y - Math.sin(car.angle)*12, life:100});
+  let maxy = canvas.height;
+  let n, seg, p1, p2;
+
+  for (n = baseSegment; n < baseSegment + 300; n++) {
+    seg = segments[n % segments.length];
+
+    p1 = { x: -seg.curve - playerX * 0.5, y: seg.y - camY, z: (n - baseSegment) * segLength - camZ };
+    p2 = { x: seg.curve - playerX * 0.5, y: seg.y - camY, z: (n - baseSegment + 1) * segLength - camZ };
+
+    project(p1, 0, camY, camZ);
+    project(p2, 0, camY, camZ);
+
+    if (p1.Y >= maxy) continue;
+
+    let color = Math.floor(n / rumbleLength) % 2? '#555' : '#777';
+    let rumbleColor = Math.floor(n / rumbleLength) % 2? '#b00' : '#d00';
+
+    // Road
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(p1.X - p1.scale * 400, p1.Y);
+    ctx.lineTo(p2.X - p2.scale * 400, p2.Y);
+    ctx.lineTo(p2.X + p2.scale * 400, p2.Y);
+    ctx.lineTo(p1.X + p1.scale * 400, p1.Y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Rumble strips
+    ctx.fillStyle = rumbleColor;
+    ctx.beginPath();
+    ctx.moveTo(p1.X - p1.scale * 420, p1.Y);
+    ctx.lineTo(p1.X - p1.scale * 400, p1.Y);
+    ctx.lineTo(p2.X - p2.scale * 400, p2.Y);
+    ctx.lineTo(p2.X - p2.scale * 420, p2.Y);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(p1.X + p1.scale * 400, p1.Y);
+    ctx.lineTo(p1.X + p1.scale * 420, p1.Y);
+    ctx.lineTo(p2.X + p2.scale * 420, p2.Y);
+    ctx.lineTo(p2.X + p2.scale * 400, p2.Y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lane lines
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 3 * p1.scale;
+    ctx.setLineDash([50, 50]);
+    ctx.beginPath();
+    ctx.moveTo(p1.X, p1.Y);
+    ctx.lineTo(p2.X, p2.Y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    maxy = p2.Y;
+  }
+}
+
+function drawCar() {
+  let carY = canvas.height * 0.85;
+  let carX = canvas.width / 2 + playerX * canvas.width * 0.3;
+  let scale = 1.2;
+
+  ctx.save();
+  ctx.translate(carX, carY);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.ellipse(0, 25, 40*scale, 15*scale, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Car body - sporty shape
+  let grad = ctx.createLinearGradient(-30*scale,-20*scale, 30*scale,20*scale);
+  grad.addColorStop(0, '#ff0033');
+  grad.addColorStop(0.5, '#ff6688');
+  grad.addColorStop(1, '#990022');
+  ctx.fillStyle = grad;
+
+  ctx.beginPath();
+  ctx.moveTo(-30*scale, -10*scale);
+  ctx.quadraticCurveTo(0, -25*scale, 30*scale, -10*scale);
+  ctx.lineTo(30*scale, 15*scale);
+  ctx.quadraticCurveTo(0, 25*scale, -30*scale, 15*scale);
+  ctx.closePath();
+  ctx.fill();
+
+  // Windshield
+  ctx.fillStyle = '#4a90e2';
+  ctx.beginPath();
+  ctx.moveTo(-20*scale, -8*scale);
+  ctx.quadraticCurveTo(0, -18*scale, 20*scale, -8*scale);
+  ctx.lineTo(20*scale, 5*scale);
+  ctx.lineTo(-20*scale, 5*scale);
+  ctx.closePath();
+  ctx.fill();
+
+  // Headlights
+  ctx.fillStyle = 'rgba(255,255,200,0.9)';
+  ctx.beginPath();
+  ctx.arc(25*scale, -5*scale, 6*scale, 0, Math.PI*2);
+  ctx.arc(25*scale, 5*scale, 6*scale, 0, Math.PI*2);
+  ctx.fill();
+
+  // Speed lines when boosting
+  if (boost && playerSpeed > 8) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 2;
+    for(let i=0; i<10; i++) {
+      let y = -20 + i*5;
+      ctx.beginPath();
+      ctx.moveTo(-40*scale, y);
+      ctx.lineTo(-60*scale - playerSpeed*2, y + Math.random()*4-2);
+      ctx.stroke();
     }
   }
 
-  car.speed *= car.friction;
-  car.speed = Math.max(-car.maxSpeed/2, Math.min(car.speed, car.maxSpeed));
-  car.x += Math.cos(car.angle) * car.speed;
-  car.y += Math.sin(car.angle) * car.speed;
-
-  if (car.x < t.inner.x || car.x > t.inner.x + t.inner.w || car.y < t.inner.y || car.y > t.inner.y + t.inner.h) {
-    car.speed *= 0.6;
-  }
-
-  let dist = Math.hypot(car.x - checkpoint.x, car.y - checkpoint.y);
-  if (dist < 35 &&!car.checkpoint) {
-    car.checkpoint = true;
-    car.lap++;
-    if (car.lap > 3 && isPlayer) reset();
-  }
-  if (dist > 60) car.checkpoint = false;
-}
-
-function drawCar(car) {
-  ctx.save();
-  ctx.translate(car.x, car.y);
-  ctx.rotate(car.angle);
-
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  ctx.ellipse(2, 3, 16, 9, 0, 0, Math.PI*2);
-
-  ctx.fillStyle = car.color;
-  ctx.beginPath();
-  ctx.roundRect(-14, -8, 28, 16, 5);
-  ctx.fill();
-
-  ctx.fillStyle = '#1a1a2e';
-  ctx.beginPath();
-  ctx.roundRect(-9, -4, 18, 8, 3);
-  ctx.fill();
-
-  ctx.fillStyle = '#ffff88';
-  ctx.fillRect(10, -5, 3, 2);
-  ctx.fillRect(10, 3, 3, 2);
   ctx.restore();
 }
 
-function draw() {
-  let t = getTrack(currentTrack);
-  checkpoint = { x:canvas.width/2, y:t.inner.y + 20, passed:false };
-
-  ctx.fillStyle = '#0a2a0a';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#555';
-  ctx.fillRect(t.inner.x-40, t.inner.y-40, t.inner.w+80, t.inner.h+80);
-  ctx.fillStyle = '#222';
-  ctx.fillRect(t.inner.x, t.inner.y, t.inner.w, t.inner.h);
-
-  ctx.strokeStyle = 'rgba(50,50,50,0.5)';
-  ctx.lineWidth = 3;
-  tireMarks = tireMarks.filter(m => m.life-- > 0);
-  tireMarks.forEach(m => {
-    ctx.beginPath();
-    ctx.moveTo(m.x, m.y);
-    ctx.lineTo(m.x + Math.random()*4-2, m.y + Math.random()*4-2);
-    ctx.stroke();
-  });
-
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 4;
-  ctx.setLineDash([20, 20]);
-  ctx.strokeRect(t.inner.x-40, t.inner.y-40, t.inner.w+80, t.inner.h+80);
-  ctx.setLineDash([]);
-
-  ctx.fillStyle = '#ff0';
-  ctx.fillRect(checkpoint.x - 30, checkpoint.y - 5, 60, 10);
-
-  driftParticles = driftParticles.filter(p => p.life-- > 0);
-  driftParticles.forEach(p => {
-    ctx.fillStyle = `rgba(200,200,200,${p.life/20})`;
-    ctx.beginPath();
-    ctx.arc(p.x + Math.random()*8-4, p.y + Math.random()*8-4, 6, 0, Math.PI*2);
-    ctx.fill();
-  });
-
-  cars.forEach(c => drawCar(c));
-}
-
 function update() {
-  if (keys['r']) reset();
-  cars.forEach((c, i) => updateCar(c, i===0));
+  // Controls
+  if (keys['w']) playerSpeed += accel;
+  if (keys['s']) playerSpeed -= accel * 1.5;
+  if (keys['a']) playerX -= 0.05;
+  if (keys['d']) playerX += 0.05;
 
-  let sorted = [...cars].sort((a,b) => b.lap - a.lap || b.y - a.y);
-  let pos = sorted.indexOf(player) + 1;
+  // Nitro boost
+  if (boost && nitro > 0 && playerSpeed > 3) {
+    playerSpeed += 0.5;
+    nitro -= 0.5;
+  } else {
+    nitro = Math.min(100, nitro + 0.2);
+  }
 
-  document.getElementById('speed').textContent = Math.floor(Math.abs(player.speed * 22));
-  document.getElementById('lap').textContent = Math.min(player.lap, 3) + '/3';
-  document.getElementById('time').textContent = ((Date.now() - startTime) / 1000).toFixed(2);
-  document.getElementById('pos').textContent = pos + '/3';
+  playerSpeed *= friction;
+  playerSpeed = Math.max(0, Math.min(playerSpeed, maxSpeed + (boost?3:0)));
+  playerX = Math.max(-1, Math.min(1, playerX));
+
+  distance += playerSpeed;
+
+  // HUD
+  document.getElementById('speed').textContent = Math.floor(playerSpeed * 25);
+  document.getElementById('time').textContent = ((Date.now() - startTime) / 1000).toFixed(1);
+  document.getElementById('dist').textContent = Math.floor(distance / 10);
 }
-
-function reset() {
-  let t = getTrack(currentTrack);
-  player.x = t.start.x; player.y = t.start.y; player.angle = -Math.PI/2; player.speed = 0; player.lap = 0; player.checkpoint = false;
-  ai1.x = t.start.x-30; ai1.y = t.start.y; ai1.angle = -Math.PI/2; ai1.lap = 0; ai1.checkpoint = false;
-  ai2.x = t.start.x+30; ai2.y = t.start.y; ai2.angle = -Math.PI/2; ai2.lap = 0; ai2.checkpoint = false;
-  startTime = Date.now(); tireMarks = []; driftParticles = [];
-}
-
-reset(); // spawn cars correctly first time
 
 function gameLoop() {
   update();
-  draw();
+  drawRoad();
+  drawCar();
   requestAnimationFrame(gameLoop);
 }
 gameLoop();
