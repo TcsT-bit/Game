@@ -658,6 +658,117 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
     doc.text('VAT 15%:', 140, y);
     doc.text('R' + vat, 170, y);
     y += 7;
+async function createInvoicePDF(invNum, client, clientEmail, clientAddress, items, subtotal, discount, vat, total, useVAT, notes, isPaid){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // LOGO FIRST - bigger, moved left, top right
+  try {
+    const logoImg = await fetch(COMPANY.logo).then(r=>r.blob()).then(b=>new Promise(resolve=>{
+      let reader = new FileReader();
+      reader.onload = ()=>resolve(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(logoImg, 'JPEG', 145, 12, 45, 45); // x=145 y=12 w=45 h=45
+  } catch(e){}
+
+  // PAID STAMP
+  if(isPaid){
+    doc.setFontSize(50);
+    doc.setTextColor(16, 185, 129);
+    doc.text('PAID', 65, 140, {angle: -30});
+    doc.setFontSize(11);
+    doc.text('Paid on: ' + new Date().toLocaleDateString('en-ZA'), 70, 155, {angle: -30});
+    doc.setTextColor(0);
+  }
+
+  // HEADER
+  doc.setFontSize(24);
+  doc.setFont(undefined, 'bold');
+  doc.text(useVAT? 'TAX INVOICE' : 'INVOICE', 20, 25);
+
+  // COMPANY INFO BOX - MOVED DOWN from y=35 to y=55
+  doc.setDrawColor(37, 99, 235);
+  doc.setLineWidth(0.5);
+  doc.rect(20, 55, 90, 45);
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  doc.text(COMPANY.name, 23, 62);
+  doc.setFont(undefined, 'normal');
+  doc.text(COMPANY.address, 23, 69);
+  doc.text('Email: ' + COMPANY.email, 23, 76);
+  doc.text('Tel: ' + COMPANY.phone, 23, 83);
+  if(useVAT) doc.text('VAT: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 23, 90);
+  doc.text('Bank: ' + COMPANY.bank + ' Acc: ' + COMPANY.acc, 23, 97);
+
+  // INVOICE DETAILS BOX - MOVED DOWN from y=35 to y=55
+  doc.rect(120, 55, 70, 45);
+  doc.setFont(undefined, 'bold');
+  doc.text('INVOICE NO:', 123, 62);
+  doc.text('DATE:', 123, 69);
+  doc.text('DUE DATE:', 123, 76);
+  doc.setFont(undefined, 'normal');
+  doc.text(invNum, 160, 62);
+  let today = new Date();
+  let dueDate = new Date(today);
+  dueDate.setDate(today.getDate() + 7);
+  doc.text(today.toLocaleDateString('en-ZA'), 160, 69);
+  doc.text(dueDate.toLocaleDateString('en-ZA'), 160, 76);
+
+  // BILL TO SECTION - moved down from 95 to 115
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'bold');
+  doc.text('BILL TO:', 20, 115);
+  doc.setFont(undefined, 'normal');
+  doc.text(client.name, 20, 122);
+  if(clientEmail) doc.text('Email: ' + clientEmail, 20, 129);
+  if(clientAddress){
+    let addrLines = doc.splitTextToSize(clientAddress, 90);
+    doc.text(addrLines, 20, 136);
+  }
+
+  // TABLE HEADER - moved down from 145 to 165
+  let y = 165;
+  doc.setFillColor(37, 99, 235);
+  doc.rect(20, y, 170, 8, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont(undefined, 'bold');
+  doc.text('#', 23, y+6);
+  doc.text('DESCRIPTION', 35, y+6);
+  doc.text('AMOUNT', 170, y+6);
+  doc.setTextColor(0);
+  y += 12;
+
+  // ITEMS
+  doc.setFont(undefined, 'normal');
+  items.forEach((it, idx)=>{
+    doc.text(String(idx+1), 23, y);
+    let descLines = doc.splitTextToSize(it.desc, 120);
+    doc.text(descLines, 35, y);
+    doc.text('R' + it.price.toFixed(2), 170, y);
+    y += descLines.length * 5 + 3;
+    doc.line(20, y, 190, y);
+    y += 5;
+  });
+
+  // TOTALS
+  y += 5;
+  doc.text('Subtotal:', 140, y);
+  doc.text('R' + subtotal, 170, y);
+  y += 7;
+
+  if(parseFloat(discount) > 0){
+    doc.setTextColor(220, 38, 38);
+    doc.text('Discount:', 140, y);
+    doc.text('-R' + discount, 170, y);
+    doc.setTextColor(0);
+    y += 7;
+  }
+
+  if(useVAT){
+    doc.text('VAT 15%:', 140, y);
+    doc.text('R' + vat, 170, y);
+    y += 7;
   }
 
   doc.setLineWidth(0.8);
