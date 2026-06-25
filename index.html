@@ -675,7 +675,8 @@ if(clientAddress){
   doc.line(20, 280, 190, 280);
   doc.text('Thank you for choosing Twinz Cooperate Services Pty Ltd', 105, 287, {align:'center'});
 
-  doc.save(invNum + (isPaid? '_PAID' : '') + '.pdf');
+  let timestamp = new Date().getTime();
+doc.save(invNum + (isPaid ? '_PAID' : '') + '-' + timestamp + '.pdf');
 }
 
 function loadInvoices(){
