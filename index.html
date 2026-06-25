@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Twinz Cooperate - GOD TIER Invoices</title>
+<title>Twinz Cooperate - GOD TIER v2.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -13,13 +13,14 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 body{background:#0a0a0a;color:#f1f5f9;padding:16px;max-width:1000px;margin:0 auto}
 .card{background:#111827;border-radius:18px;padding:22px;margin-bottom:18px;border:1px solid #1f2937;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
-h1{font-size:26px;margin-bottom:6px;color:#3b82f6}
+h1{font-size:26px;margin-bottom:6px;color:#3b82f6;display:flex;align-items:center;gap:12px}
 h2{font-size:18px;margin-bottom:14px;color:#e5e7eb}
+.logo{width:48px;height:48px;border-radius:12px;object-fit:cover;border:2px solid #3b82f6}
 .sub{color:#9ca3af;font-size:13px;margin-bottom:18px}
 input,textarea,select{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#0a0a0a;color:#f1f5f9;margin-bottom:11px;font-size:16px}
 button{background:#2563eb;color:white;border:none;padding:15px 22px;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;transition:0.2s;width:100%}
 button:active{transform:scale(0.97);background:#1d4ed8}
-.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}.btn-purple{background:#7c3aed}
+.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}.btn-purple{background:#7c3aed}.btn-blue{background:#0ea5e9}
 .grid{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .inv-row{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#0a0a0a;border-radius:10px;margin-bottom:10px;border-left:4px solid #2563eb}
@@ -34,12 +35,17 @@ button:active{transform:scale(0.97);background:#1d4ed8}
 .stat-card{background:linear-gradient(135deg,#1e3a8a,#1e40af);padding:20px;border-radius:14px;text-align:center}
 .stat-num{font-size:32px;font-weight:800;color:#60a5fa}
 .portal-link{background:#0a0a0a;padding:12px;border-radius:8px;border:1px dashed #3b82f6;margin:10px 0;word-break:break-all;font-size:13px}
+.client-actions{display:flex;gap:8px;margin-top:8px}
+.client-actions button{padding:8px 12px;font-size:13px;width:auto}
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:999}
+.modal.active{display:flex}
+.modal-card{background:#111827;padding:24px;border-radius:16px;max-width:400px;width:90%}
 @media(max-width:650px){.grid,.grid-3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<h1>Twinz Cooperate Services ⚡ GOD TIER</h1>
+<h1><img src="https://files.catbox.moe/6du2av.jpg" class="logo"> Twinz Cooperate ⚡ GOD TIER</h1>
 <div class="sub">IT Solutions & Web Development | VAT: 9819040198</div>
 
 <div class="tabs">
@@ -103,7 +109,7 @@ button:active{transform:scale(0.97);background:#1d4ed8}
 
 <!-- CLIENTS -->
 <div id="clients" class="card hidden">
-  <h2>Client Database + Portal Links</h2>
+  <h2>Client Database - Tap to Edit</h2>
   <div id="clientList"></div>
 </div>
 
@@ -119,8 +125,20 @@ button:active{transform:scale(0.97);background:#1d4ed8}
   <canvas id="revenueChart" height="100"></canvas>
 </div>
 
+<!-- EDIT CLIENT MODAL -->
+<div id="editModal" class="modal" onclick="closeModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <h2>Edit Client</h2>
+    <input id="editName" placeholder="Company Name">
+    <input id="editWhatsapp" placeholder="WhatsApp +27...">
+    <input id="editEmail" placeholder="Email">
+    <button class="btn-green" onclick="saveClient()">Save Changes</button>
+    <button class="btn-red" onclick="deleteClient()">Delete Client</button>
+    <button class="btn-blue" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
 <script>
-// === FIREBASE CONFIG - REPLACE WITH YOURS ===
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -137,6 +155,7 @@ let itemCount = 1;
 let clients = [];
 let invoices = [];
 let recurring = [];
+let editingClientId = null;
 
 const COMPANY = {
   name: 'Twinz Cooperate Services Pty Ltd',
@@ -147,7 +166,8 @@ const COMPANY = {
   reg: '2024/444303/07',
   bank: 'Standard Bank',
   acc: '10 26 459 443 4',
-  branch: '006145'
+  branch: '006145',
+  logo: 'https://files.catbox.moe/6du2av.jpg'
 };
 
 function showTab(tab){
@@ -162,7 +182,6 @@ function showTab(tab){
   if(tab==='reports') loadReports();
 }
 
-// FIREBASE SYNC
 db.collection('twinz_clients').onSnapshot(snap=>{
   clients = snap.docs.map(d=>({id:d.id,...d.data()}));
   loadClientSelect();
@@ -224,9 +243,39 @@ function loadClients(){
   let html = '';
   clients.forEach(c=>{
     let portalUrl = location.origin + location.pathname + '?portal=' + c.portalId;
-    html += `<div class="inv-row">${c.name}<br><small style="color:#9ca3af">${c.whatsapp} | ${c.email}</small><div class="portal-link">Portal: ${portalUrl}</div></div>`;
+    html += `<div class="inv-row"><div>${c.name}<br><small style="color:#9ca3af">${c.whatsapp} | ${c.email}</small><div class="portal-link">Portal: ${portalUrl}</div></div><div class="client-actions"><button class="btn-blue" onclick="editClient('${c.id}')">Edit</button></div></div>`;
   });
   document.getElementById('clientList').innerHTML = html || '<div class="sub">No clients yet</div>';
+}
+
+function editClient(id){
+  editingClientId = id;
+  let client = clients.find(c=>c.id==id);
+  document.getElementById('editName').value = client.name;
+  document.getElementById('editWhatsapp').value = client.whatsapp;
+  document.getElementById('editEmail').value = client.email;
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeModal(e){
+  if(!e || e.target.id === 'editModal') document.getElementById('editModal').classList.remove('active');
+}
+
+async function saveClient(){
+  let name = document.getElementById('editName').value;
+  let whatsapp = document.getElementById('editWhatsapp').value;
+  let email = document.getElementById('editEmail').value;
+  if(name && whatsapp){
+    await db.collection('twinz_clients').doc(editingClientId).update({name, whatsapp, email});
+    closeModal();
+  }
+}
+
+async function deleteClient(){
+  if(confirm('Delete this client? This cannot be undone.')){
+    await db.collection('twinz_clients').doc(editingClientId).delete();
+    closeModal();
+  }
 }
 
 async function generateInvoice(){
@@ -239,7 +288,6 @@ async function generateInvoice(){
   const vat = document.getElementById('vat').textContent;
   const invNum = 'TCS-' + new Date().getFullYear() + '-' + String(invoices.length+1).padStart(4,'0');
 
-  // Build items
   let items = [];
   for(let i=0; i<itemCount; i++){
     let desc = document.getElementById('item'+i)?.value;
@@ -247,46 +295,55 @@ async function generateInvoice(){
     if(desc && price) items.push({desc, price: parseFloat(price)});
   }
 
-  // PDF
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
+
+  // Add Logo to PDF
+  try {
+    const logoImg = await fetch(COMPANY.logo).then(r=>r.blob()).then(b=>new Promise(resolve=>{
+      let reader = new FileReader();
+      reader.onload = ()=>resolve(reader.result);
+      reader.readAsDataURL(b);
+    }));
+    doc.addImage(logoImg, 'JPEG', 160, 15, 30, 30);
+  } catch(e){}
+
   doc.setFontSize(22);
-  doc.text('TAX INVOICE', 105, 22, {align:'center'});
+  doc.text('TAX INVOICE', 20, 22);
 
   doc.setFontSize(11);
-  doc.text(COMPANY.name, 20, 38);
-  doc.text(COMPANY.address, 20, 45);
-  doc.text('Email: ' + COMPANY.email, 20, 52);
-  doc.text('Tel: ' + COMPANY.phone, 20, 59);
-  doc.text('VAT No: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 20, 66);
+  doc.text(COMPANY.name, 20, 45);
+  doc.text(COMPANY.address, 20, 52);
+  doc.text('Email: ' + COMPANY.email, 20, 59);
+  doc.text('Tel: ' + COMPANY.phone, 20, 66);
+  doc.text('VAT No: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 20, 73);
 
-  doc.text('Bill To: ' + client.name, 120, 38);
-  doc.text('WhatsApp: ' + client.whatsapp, 120, 45);
+  doc.text('Bill To: ' + client.name, 120, 45);
+  doc.text('WhatsApp: ' + client.whatsapp, 120, 52);
 
-  doc.line(20, 75, 190, 75);
-  doc.text('Invoice No: ' + invNum, 20, 85);
-  doc.text('Date: ' + new Date().toLocaleDateString('en-ZA'), 20, 92);
-  doc.text('Portal: ' + location.origin + location.pathname + '?portal=' + client.portalId, 20, 99);
+  doc.line(20, 85, 190, 85);
+  doc.text('Invoice No: ' + invNum, 20, 95);
+  doc.text('Date: ' + new Date().toLocaleDateString('en-ZA'), 20, 102);
+  doc.text('Portal: ' + location.origin + location.pathname + '?portal=' + client.portalId, 20, 109);
 
-  let y = 115;
+  let y = 125;
   items.forEach(it=>{
     doc.text(it.desc + ' - R' + it.price.toFixed(2), 20, y);
     y += 7;
   });
-  doc.line(20, 150, 190, 150);
+  doc.line(20, 160, 190, 160);
 
-  doc.text('Subtotal: R' + subtotal, 140, 160);
-  doc.text('VAT 15%: R' + vat, 140, 167);
+  doc.text('Subtotal: R' + subtotal, 140, 170);
+  doc.text('VAT 15%: R' + vat, 140, 177);
   doc.setFontSize(14);
-  doc.text('TOTAL DUE: R' + total, 140, 178);
+  doc.text('TOTAL DUE: R' + total, 140, 188);
 
   doc.setFontSize(10);
-  doc.text('Banking: ' + COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 195);
-  doc.text('Upload EFT proof at client portal', 20, 202);
+  doc.text('Banking: ' + COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 205);
+  doc.text('Upload EFT proof at client portal', 20, 212);
 
-  const pdfBlob = doc.output('blob');
+  doc.save(invNum + '.pdf');
 
-  // Save to Firestore
   await db.collection('twinz_invoices').add({
     num: invNum,
     clientId,
@@ -300,7 +357,6 @@ async function generateInvoice(){
     portalId: client.portalId
   });
 
-  // WhatsApp + Portal link
   let msg = `Hi ${client.name},\n\nTAX INVOICE ${invNum} from Twinz Cooperate.\nTotal: R${total} incl VAT\nView & Upload EFT Proof: ${location.origin + location.pathname}?portal=${client.portalId}\n\nThank you!`;
   window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
 
@@ -360,16 +416,15 @@ function loadReports(){
   const months = ['Jan','Feb','Mar','Apr','May','Jun'];
   const data = months.map(m=>{
     return invoices.filter(i=>new Date(i.date).toLocaleString('en', {month:'short'})===m && i.status==='paid')
-     .reduce((a,b)=>a+b.total,0);
+    .reduce((a,b)=>a+b.total,0);
   });
   new Chart(ctx, {type:'bar', data:{labels:months, datasets:[{label:'Revenue R', data, backgroundColor:'#3b82f6'}]}});
 }
 
-// CLIENT PORTAL MODE
 const urlParams = new URLSearchParams(window.location.search);
 const portalId = urlParams.get('portal');
 if(portalId){
-  document.body.innerHTML = '<div class="card"><h2>Client Portal - Upload EFT Proof</h2><select id="portalInv"></select><input type="file" id="proofFile"><button class="btn-green" onclick="uploadProof()">Upload Proof</button></div>';
+  document.body.innerHTML = '<div class="card"><h2><img src="'+COMPANY.logo+'" class="logo"> Client Portal</h2><select id="portalInv"></select><input type="file" id="proofFile" accept="image/*"><button class="btn-green" onclick="uploadProof()">Upload EFT Proof</button></div>';
   db.collection('twinz_invoices').where('portalId','==',portalId).where('status','==','unpaid').get().then(snap=>{
     let html = '<option value="">Select Invoice...</option>';
     snap.docs.forEach(d=>{html += `<option value="${d.id}">${d.data().num} - R${d.data().total}</option>`});
@@ -381,7 +436,7 @@ async function uploadProof(){
   const invId = document.getElementById('portalInv').value;
   const file = document.getElementById('proofFile').files[0];
   if(invId && file){
-    const ref = storage.ref('proofs/' + invId + '_' + file.name);
+    const ref = storage.ref('proofs/' + invId + '_' + Date.now() + '.jpg');
     await ref.put(file);
     const url = await ref.getDownloadURL();
     await db.collection('twinz_invoices').doc(invId).update({proofUrl: url, status:'pending'});
