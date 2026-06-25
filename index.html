@@ -711,12 +711,17 @@ async function sendPaidInvoice(invId){
 
   await createInvoicePDF(inv.num, client, inv.clientEmail, inv.clientAddress, inv.items, inv.subtotal, inv.discount, inv.vat, inv.total, inv.useVAT, inv.notes, true);
 
-  let msg = `Hi ${client.name},\n\nPAID INVOICE ${inv.num} from Twinz Cooperate.\nTotal: R${inv.total} - PAID\nThank you for your payment!`;
-  window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
-}
+  // FIX: Convert SA number 071... to 2771... for wa.me
+  let waNum = client.whatsapp ? client.whatsapp.replace(/\D/g,'') : '';
+  if(waNum.startsWith('0')) waNum = '27' + waNum.slice(1);
+  
+  if(!waNum){
+    alert('Client WhatsApp number missing! Add number in Edit Client');
+    return;
+  }
 
-function viewProof(url){
-  window.open(url, '_blank');
+  let msg = `Hi ${client.name},\n\nPAID INVOICE ${inv.num} from Twinz Cooperate.\nTotal: R${inv.total} - PAID\nThank you for your payment!`;
+  window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`);
 }
 
 async function addRecurring(){
