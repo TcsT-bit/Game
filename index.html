@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Twinz Cooperate - GOD TIER v2.4.2</title>
+<title>Twinz Cooperate - GOD TIER v2.4.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -110,9 +110,16 @@ input:checked +.slider:before{transform:translateX(24px)}
   </div>
   <button onclick="addItem()">+ Add Item</button>
 
+  <!-- DISCOUNT FIELD -->
+  <div class="label">Discount R</div>
+  <input type="number" id="discount" value="0" placeholder="Enter discount amount" oninput="calcTotal()">
+
   <div class="total-box">
     <div style="display:flex;justify-content:space-between;margin-bottom:8px">
       <span>Subtotal:</span><span>R<span id="subtotal">0.00</span></span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:#fbbf24">
+      <span>Discount:</span><span>-R<span id="discountShow">0.00</span></span>
     </div>
     <div id="vatRow" style="display:flex;justify-content:space-between;margin-bottom:8px">
       <span>VAT 15%:</span><span>R<span id="vat">0.00</span></span>
@@ -277,13 +284,18 @@ function calcTotal(){
   for(let i=0; i<itemCount; i++){
     subtotal += parseFloat(document.getElementById('price'+i)?.value || 0);
   }
+  let discount = parseFloat(document.getElementById('discount').value || 0);
+  let afterDiscount = subtotal - discount;
+  if(afterDiscount < 0) afterDiscount = 0;
+
   let useVAT = document.getElementById('vatToggle').checked;
-  let vat = useVAT? subtotal * 0.15 : 0;
+  let vat = useVAT? afterDiscount * 0.15 : 0;
 
   document.getElementById('vatRow').style.display = useVAT? 'flex' : 'none';
   document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+  document.getElementById('discountShow').textContent = discount.toFixed(2);
   document.getElementById('vat').textContent = vat.toFixed(2);
-  document.getElementById('total').textContent = (subtotal + vat).toFixed(2);
+  document.getElementById('total').textContent = (afterDiscount + vat).toFixed(2);
 }
 
 async function addClient(){
@@ -470,6 +482,7 @@ async function generateInvoice(){
   const client = clients.find(c=>c.id==clientId);
   const total = document.getElementById('total').textContent;
   const subtotal = document.getElementById('subtotal').textContent;
+  const discount = document.getElementById('discount').value;
   const vat = document.getElementById('vat').textContent;
   const useVAT = document.getElementById('vatToggle').checked;
   const invNum = 'TCS-' + new Date().getFullYear() + '-' + String(invoices.length+1).padStart(4,'0');
@@ -518,9 +531,17 @@ async function generateInvoice(){
   doc.line(20, 160, 190, 160);
 
   doc.text('Subtotal: R' + subtotal, 140, 170);
-  if(useVAT) doc.text('VAT 15%: R' + vat, 140, 177);
+  if(parseFloat(discount) > 0){
+    doc.setTextColor(220, 38, 38);
+    doc.text('Discount: -R' + discount, 140, 177);
+    doc.setTextColor(0);
+    y = 184;
+  } else {
+    y = 177;
+  }
+  if(useVAT) doc.text('VAT 15%: R' + vat, 140, y);
   doc.setFontSize(14);
-  doc.text('TOTAL DUE: R' + total, 140, useVAT? 188 : 177);
+  doc.text('TOTAL DUE: R' + total, 140, useVAT? y+11 : y+7);
 
   doc.setFontSize(10);
   doc.text('Banking: ' + COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 205);
@@ -542,6 +563,7 @@ async function generateInvoice(){
     clientName: client.name,
     items,
     subtotal: parseFloat(subtotal),
+    discount: parseFloat(discount),
     vat: parseFloat(vat),
     total: parseFloat(total),
     useVAT,
@@ -564,9 +586,9 @@ function loadInvoices(){
     let date = new Date(inv.date).toLocaleDateString('en-ZA');
     let type = inv.useVAT? 'TAX' : 'INV';
     let paidBtn = inv.status==='paid'
-     ? `<button class="btn-gray" style="width:auto;padding:8px" disabled>✓ Paid</button>`
+    ? `<button class="btn-gray" style="width:auto;padding:8px" disabled>✓ Paid</button>`
       : inv.proofUrl
-       ? `<button class="btn-yellow" style="width:auto;padding:8px" onclick="viewProof('${inv.proofUrl}')">View Proof</button><button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`
+      ? `<button class="btn-yellow" style="width:auto;padding:8px" onclick="viewProof('${inv.proofUrl}')">View Proof</button><button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`
         : `<button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`;
     html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.clientName}<br><small style="color:#9ca3af">${type} | R${inv.total} | ${date} | ${inv.status}</small></div><div>${paidBtn}</div></div>`;
   });
