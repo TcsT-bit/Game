@@ -3,11 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Twinz Cooperate - Invoices</title>
+<title>Twinz Cooperate - GOD TIER Invoices</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-body{background:#0a0a0a;color:#f1f5f9;padding:16px;max-width:850px;margin:0 auto}
+body{background:#0a0a0a;color:#f1f5f9;padding:16px;max-width:1000px;margin:0 auto}
 .card{background:#111827;border-radius:18px;padding:22px;margin-bottom:18px;border:1px solid #1f2937;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
 h1{font-size:26px;margin-bottom:6px;color:#3b82f6}
 h2{font-size:18px;margin-bottom:14px;color:#e5e7eb}
@@ -15,37 +19,54 @@ h2{font-size:18px;margin-bottom:14px;color:#e5e7eb}
 input,textarea,select{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#0a0a0a;color:#f1f5f9;margin-bottom:11px;font-size:16px}
 button{background:#2563eb;color:white;border:none;padding:15px 22px;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;transition:0.2s;width:100%}
 button:active{transform:scale(0.97);background:#1d4ed8}
-.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}
+.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}.btn-purple{background:#7c3aed}
 .grid{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .inv-row{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#0a0a0a;border-radius:10px;margin-bottom:10px;border-left:4px solid #2563eb}
 .status-paid{border-left-color:#16a34a}
 .status-overdue{border-left-color:#dc2626}
+.status-pending{border-left-color:#ca8a04}
 .tabs{display:flex;gap:8px;margin-bottom:18px;overflow-x:auto}
-.tab{flex:1;min-width:120px;padding:11px;text-align:center;background:#1f2937;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px}
+.tab{flex:1;min-width:110px;padding:11px;text-align:center;background:#1f2937;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px}
 .tab.active{background:#2563eb}
 .hidden{display:none}
 .total-box{background:#1e3a8a;padding:16px;border-radius:12px;margin-top:12px}
-@media(max-width:650px){.grid{grid-template-columns:1fr}}
+.stat-card{background:linear-gradient(135deg,#1e3a8a,#1e40af);padding:20px;border-radius:14px;text-align:center}
+.stat-num{font-size:32px;font-weight:800;color:#60a5fa}
+.portal-link{background:#0a0a0a;padding:12px;border-radius:8px;border:1px dashed #3b82f6;margin:10px 0;word-break:break-all;font-size:13px}
+@media(max-width:650px){.grid,.grid-3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<h1>Twinz Cooperate Services</h1>
+<h1>Twinz Cooperate Services ⚡ GOD TIER</h1>
 <div class="sub">IT Solutions & Web Development | VAT: 9819040198</div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('new')">New Invoice</div>
+  <div class="tab active" onclick="showTab('dashboard')">Dashboard</div>
+  <div class="tab" onclick="showTab('new')">New Invoice</div>
+  <div class="tab" onclick="showTab('recurring')">Recurring</div>
   <div class="tab" onclick="showTab('clients')">Clients</div>
   <div class="tab" onclick="showTab('list')">Invoices</div>
-  <div class="tab" onclick="showTab('settings')">Company</div>
+  <div class="tab" onclick="showTab('reports')">Reports</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="card">
+  <h2>Command Center</h2>
+  <div class="grid-3">
+    <div class="stat-card"><div class="stat-num" id="statTotal">R0</div><div>Total Revenue</div></div>
+    <div class="stat-card"><div class="stat-num" id="statOutstanding">R0</div><div>Outstanding</div></div>
+    <div class="stat-card"><div class="stat-num" id="statClients">0</div><div>Active Clients</div></div>
+  </div>
 </div>
 
 <!-- NEW INVOICE -->
-<div id="new" class="card">
+<div id="new" class="card hidden">
   <h2>Create Tax Invoice</h2>
   <select id="clientSelect"><option value="">Select Client...</option></select>
   <button class="btn-yellow" onclick="addClient()">+ Add Client</button>
-  
+
   <div id="items" style="margin-top:16px">
     <div class="grid">
       <input placeholder="Service / Description" id="item0">
@@ -53,7 +74,7 @@ button:active{transform:scale(0.97);background:#1d4ed8}
     </div>
   </div>
   <button onclick="addItem()">+ Add Item</button>
-  
+
   <div class="total-box">
     <div style="display:flex;justify-content:space-between;margin-bottom:8px">
       <span>Subtotal:</span><span>R<span id="subtotal">0.00</span></span>
@@ -65,38 +86,57 @@ button:active{transform:scale(0.97);background:#1d4ed8}
       <span>TOTAL DUE:</span><span>R<span id="total">0.00</span></span>
     </div>
   </div>
-  
-  <button class="btn-green" style="margin-top:16px" onclick="generateInvoice()">Generate PDF + WhatsApp Client</button>
+
+  <button class="btn-green" style="margin-top:16px" onclick="generateInvoice()">Generate PDF + WhatsApp + Portal Link</button>
+</div>
+
+<!-- RECURRING -->
+<div id="recurring" class="card hidden">
+  <h2>Recurring Invoices / Retainers</h2>
+  <select id="recClient"><option value="">Select Client...</option></select>
+  <input placeholder="Service - e.g. Monthly Hosting" id="recService">
+  <input type="number" placeholder="Amount R per month" id="recAmount">
+  <input type="number" placeholder="Day of month 1-28" id="recDay" value="1">
+  <button class="btn-purple" onclick="addRecurring()">Set Recurring Billing</button>
+  <div id="recList" style="margin-top:20px"></div>
 </div>
 
 <!-- CLIENTS -->
 <div id="clients" class="card hidden">
-  <h2>Client Database</h2>
+  <h2>Client Database + Portal Links</h2>
   <div id="clientList"></div>
 </div>
 
 <!-- INVOICE LIST -->
 <div id="list" class="card hidden">
-  <h2>All Invoices</h2>
+  <h2>All Invoices - EFT Proof Queue</h2>
   <div id="invoiceList"></div>
 </div>
 
-<!-- SETTINGS -->
-<div id="settings" class="card hidden">
-  <h2>Company Details - Locked</h2>
-  <input value="Twinz Cooperate Services Pty Ltd" readonly>
-  <input value="Office Burgersfort Praktiseer Ext 02" readonly>
-  <input value="twinz.cooperate.services@gmail.com" readonly>
-  <input value="068 254 7352 / 069 894 9596" readonly>
-  <input value="Tax/VAT No: 9819040198 | Reg No: 2024/444303/07" readonly>
-  <input value="Standard Bank | Acc: 10 26 459 443 4 | Branch: 006145" readonly>
-  <div class="sub">Edit these in code if needed. Everything else auto-fills.</div>
+<!-- REPORTS -->
+<div id="reports" class="card hidden">
+  <h2>Revenue Analytics</h2>
+  <canvas id="revenueChart" height="100"></canvas>
 </div>
 
 <script>
+// === FIREBASE CONFIG - REPLACE WITH YOURS ===
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "XXX",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
 let itemCount = 1;
-let clients = JSON.parse(localStorage.getItem('twinz_clients') || '[]');
-let invoices = JSON.parse(localStorage.getItem('twinz_invoices') || '[]');
+let clients = [];
+let invoices = [];
+let recurring = [];
 
 const COMPANY = {
   name: 'Twinz Cooperate Services Pty Ltd',
@@ -117,7 +157,28 @@ function showTab(tab){
   event.target.classList.add('active');
   if(tab==='clients') loadClients();
   if(tab==='list') loadInvoices();
+  if(tab==='recurring') loadRecurring();
+  if(tab==='dashboard') updateDashboard();
+  if(tab==='reports') loadReports();
 }
+
+// FIREBASE SYNC
+db.collection('twinz_clients').onSnapshot(snap=>{
+  clients = snap.docs.map(d=>({id:d.id,...d.data()}));
+  loadClientSelect();
+  loadClients();
+});
+
+db.collection('twinz_invoices').onSnapshot(snap=>{
+  invoices = snap.docs.map(d=>({id:d.id,...d.data()}));
+  loadInvoices();
+  updateDashboard();
+});
+
+db.collection('twinz_recurring').onSnapshot(snap=>{
+  recurring = snap.docs.map(d=>({id:d.id,...d.data()}));
+  loadRecurring();
+});
 
 function addItem(){
   document.getElementById('items').insertAdjacentHTML('beforeend', `
@@ -140,119 +201,193 @@ function calcTotal(){
   document.getElementById('total').textContent = (subtotal + vat).toFixed(2);
 }
 
-function addClient(){
+async function addClient(){
   let name = prompt('Client Company Name:');
   let whatsapp = prompt('Client WhatsApp +27...');
   let email = prompt('Client Email:');
   if(name && whatsapp){
-    clients.push({id:Date.now(), name, whatsapp, email});
-    localStorage.setItem('twinz_clients', JSON.stringify(clients));
-    loadClientSelect();
+    await db.collection('twinz_clients').add({name, whatsapp, email, portalId: Math.random().toString(36).substr(2,9)});
   }
 }
 
 function loadClientSelect(){
   let sel = document.getElementById('clientSelect');
-  sel.innerHTML = '<option value="">Select Client...</option>';
+  let recSel = document.getElementById('recClient');
+  sel.innerHTML = recSel.innerHTML = '<option value="">Select Client...</option>';
   clients.forEach(c=>{
     sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+    recSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
   });
 }
 
 function loadClients(){
   let html = '';
   clients.forEach(c=>{
-    html += `<div class="inv-row">${c.name}<br><small style="color:#9ca3af">${c.whatsapp} | ${c.email}</small></div>`;
+    let portalUrl = location.origin + location.pathname + '?portal=' + c.portalId;
+    html += `<div class="inv-row">${c.name}<br><small style="color:#9ca3af">${c.whatsapp} | ${c.email}</small><div class="portal-link">Portal: ${portalUrl}</div></div>`;
   });
-  document.getElementById('clientList').innerHTML = html || '<div class="sub">No clients yet. Add your first client.</div>';
+  document.getElementById('clientList').innerHTML = html || '<div class="sub">No clients yet</div>';
 }
 
 async function generateInvoice(){
   const clientId = document.getElementById('clientSelect').value;
   if(!clientId) return alert('Select client first');
-  
+
   const client = clients.find(c=>c.id==clientId);
   const total = document.getElementById('total').textContent;
   const subtotal = document.getElementById('subtotal').textContent;
   const vat = document.getElementById('vat').textContent;
   const invNum = 'TCS-' + new Date().getFullYear() + '-' + String(invoices.length+1).padStart(4,'0');
-  
-  // Build items list
-  let itemsText = '';
+
+  // Build items
+  let items = [];
   for(let i=0; i<itemCount; i++){
     let desc = document.getElementById('item'+i)?.value;
     let price = document.getElementById('price'+i)?.value;
-    if(desc && price) itemsText += `${desc} - R${parseFloat(price).toFixed(2)}\n`;
+    if(desc && price) items.push({desc, price: parseFloat(price)});
   }
-  
+
   // PDF
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.setFontSize(22);
   doc.text('TAX INVOICE', 105, 22, {align:'center'});
-  
+
   doc.setFontSize(11);
   doc.text(COMPANY.name, 20, 38);
   doc.text(COMPANY.address, 20, 45);
   doc.text('Email: ' + COMPANY.email, 20, 52);
   doc.text('Tel: ' + COMPANY.phone, 20, 59);
   doc.text('VAT No: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 20, 66);
-  
+
   doc.text('Bill To: ' + client.name, 120, 38);
   doc.text('WhatsApp: ' + client.whatsapp, 120, 45);
-  doc.text('Email: ' + client.email, 120, 52);
-  
+
   doc.line(20, 75, 190, 75);
   doc.text('Invoice No: ' + invNum, 20, 85);
   doc.text('Date: ' + new Date().toLocaleDateString('en-ZA'), 20, 92);
-  doc.text('Due Date: 30 days', 20, 99);
-  
-  doc.text(itemsText, 20, 115);
+  doc.text('Portal: ' + location.origin + location.pathname + '?portal=' + client.portalId, 20, 99);
+
+  let y = 115;
+  items.forEach(it=>{
+    doc.text(it.desc + ' - R' + it.price.toFixed(2), 20, y);
+    y += 7;
+  });
   doc.line(20, 150, 190, 150);
-  
+
   doc.text('Subtotal: R' + subtotal, 140, 160);
   doc.text('VAT 15%: R' + vat, 140, 167);
   doc.setFontSize(14);
   doc.text('TOTAL DUE: R' + total, 140, 178);
-  
+
   doc.setFontSize(10);
-  doc.text('Banking Details:', 20, 195);
-  doc.text(COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 202);
-  doc.text('Please use invoice number as reference', 20, 209);
-  
-  doc.save(invNum + '.pdf');
-  
-  // Save
-  invoices.push({id:Date.now(), num:invNum, client:client.name, total, status:'unpaid', date:new Date().toISOString()});
-  localStorage.setItem('twinz_invoices', JSON.stringify(invoices));
-  
-  // WhatsApp
-  let msg = `Hi ${client.name},\n\nTAX INVOICE ${invNum} from Twinz Cooperate Services.\n\nTotal Due: R${total} incl 15% VAT\nDue: 30 days\nBank: ${COMPANY.bank} Acc: ${COMPANY.acc}\nRef: ${invNum}\n\nPDF attached. Thank you!`;
+  doc.text('Banking: ' + COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 195);
+  doc.text('Upload EFT proof at client portal', 20, 202);
+
+  const pdfBlob = doc.output('blob');
+
+  // Save to Firestore
+  await db.collection('twinz_invoices').add({
+    num: invNum,
+    clientId,
+    clientName: client.name,
+    items,
+    subtotal: parseFloat(subtotal),
+    vat: parseFloat(vat),
+    total: parseFloat(total),
+    status: 'unpaid',
+    date: new Date().toISOString(),
+    portalId: client.portalId
+  });
+
+  // WhatsApp + Portal link
+  let msg = `Hi ${client.name},\n\nTAX INVOICE ${invNum} from Twinz Cooperate.\nTotal: R${total} incl VAT\nView & Upload EFT Proof: ${location.origin + location.pathname}?portal=${client.portalId}\n\nThank you!`;
   window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
-  
-  alert('PDF downloaded + WhatsApp opened for ' + client.name);
+
+  alert('Invoice created + WhatsApp opened');
   location.reload();
 }
 
 function loadInvoices(){
   let html = '';
-  invoices.sort((a,b)=>b.id-a.id).forEach(inv=>{
-    let cls = inv.status==='paid' ? 'status-paid' : '';
+  invoices.sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(inv=>{
+    let cls = inv.status==='paid'? 'status-paid' : inv.proofUrl? 'status-pending' : '';
     let date = new Date(inv.date).toLocaleDateString('en-ZA');
-    html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.client}<br><small style="color:#9ca3af">R${inv.total} | ${date} | ${inv.status}</small></div><button class="btn-green" style="width:auto;padding:8px 14px;font-size:14px" onclick="markPaid(${inv.id})">Mark Paid</button></div>`;
+    let proofBtn = inv.proofUrl? `<button class="btn-yellow" style="width:auto;padding:8px" onclick="viewProof('${inv.proofUrl}')">View Proof</button><button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Approve</button>` : `<button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`;
+    html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.clientName}<br><small style="color:#9ca3af">R${inv.total} | ${date} | ${inv.status}</small></div><div>${proofBtn}</div></div>`;
   });
   document.getElementById('invoiceList').innerHTML = html || '<div class="sub">No invoices yet</div>';
 }
 
-function markPaid(id){
-  invoices = invoices.map(i=> i.id===id ? {...i, status:'paid'} : i);
-  localStorage.setItem('twinz_invoices', JSON.stringify(invoices));
-  loadInvoices();
+async function markPaid(id){
+  await db.collection('twinz_invoices').doc(id).update({status:'paid', paidDate: new Date().toISOString()});
 }
 
-// Init
-loadClientSelect();
-document.getElementById('price0').oninput = calcTotal;
+function viewProof(url){
+  window.open(url, '_blank');
+}
+
+async function addRecurring(){
+  const clientId = document.getElementById('recClient').value;
+  const service = document.getElementById('recService').value;
+  const amount = document.getElementById('recAmount').value;
+  const day = document.getElementById('recDay').value;
+  if(clientId && service && amount){
+    await db.collection('twinz_recurring').add({clientId, service, amount: parseFloat(amount), day: parseInt(day), lastRun: null});
+    alert('Recurring billing set!');
+  }
+}
+
+function loadRecurring(){
+  let html = '';
+  recurring.forEach(r=>{
+    let client = clients.find(c=>c.id==r.clientId);
+    html += `<div class="inv-row">Day ${r.day} - ${client?.name}<br><small>${r.service} - R${r.amount}/month</small></div>`;
+  });
+  document.getElementById('recList').innerHTML = html || '<div class="sub">No recurring invoices set</div>';
+}
+
+function updateDashboard(){
+  let total = invoices.filter(i=>i.status==='paid').reduce((a,b)=>a+b.total,0);
+  let outstanding = invoices.filter(i=>i.status==='unpaid').reduce((a,b)=>a+b.total,0);
+  document.getElementById('statTotal').textContent = 'R' + total.toFixed(0);
+  document.getElementById('statOutstanding').textContent = 'R' + outstanding.toFixed(0);
+  document.getElementById('statClients').textContent = clients.length;
+}
+
+function loadReports(){
+  const ctx = document.getElementById('revenueChart');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun'];
+  const data = months.map(m=>{
+    return invoices.filter(i=>new Date(i.date).toLocaleString('en', {month:'short'})===m && i.status==='paid')
+     .reduce((a,b)=>a+b.total,0);
+  });
+  new Chart(ctx, {type:'bar', data:{labels:months, datasets:[{label:'Revenue R', data, backgroundColor:'#3b82f6'}]}});
+}
+
+// CLIENT PORTAL MODE
+const urlParams = new URLSearchParams(window.location.search);
+const portalId = urlParams.get('portal');
+if(portalId){
+  document.body.innerHTML = '<div class="card"><h2>Client Portal - Upload EFT Proof</h2><select id="portalInv"></select><input type="file" id="proofFile"><button class="btn-green" onclick="uploadProof()">Upload Proof</button></div>';
+  db.collection('twinz_invoices').where('portalId','==',portalId).where('status','==','unpaid').get().then(snap=>{
+    let html = '<option value="">Select Invoice...</option>';
+    snap.docs.forEach(d=>{html += `<option value="${d.id}">${d.data().num} - R${d.data().total}</option>`});
+    document.getElementById('portalInv').innerHTML = html;
+  });
+}
+
+async function uploadProof(){
+  const invId = document.getElementById('portalInv').value;
+  const file = document.getElementById('proofFile').files[0];
+  if(invId && file){
+    const ref = storage.ref('proofs/' + invId + '_' + file.name);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    await db.collection('twinz_invoices').doc(invId).update({proofUrl: url, status:'pending'});
+    alert('Proof uploaded! We will verify and confirm payment.');
+  }
+}
 </script>
 </body>
 </html>
