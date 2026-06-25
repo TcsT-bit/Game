@@ -3,275 +3,256 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v3.5.5 PRO + Anti-Spoof</title>
+<title>Twinz Cooperate - Invoices</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
-body { background: #000; color: #0ff; overflow: hidden; }
-.header { background: linear-gradient(90deg, #001122, #004488); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 18px; text-shadow: 0 0 10px #0ff; }
-.btn { background: #0ff; color: #000; border: none; padding: 8px 12px; margin: 5px 2px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
-.btn:disabled { background: #444; color: #888; cursor: not-allowed; }
-.video-container { position: relative; display: inline-block; }
-video, canvas { border: 2px solid #0ff; border-radius: 6px; }
-canvas { position: absolute; top: 0; left: 0; }
-.scan-status { color: #0f0; font-size: 11px; margin-top: 5px; }
-.similarity { font-size: 11px; color: #ffaa00; margin-top: 3px; }
-.loading { color: #ffaa00; font-size: 12px; }
-input, select { width: 100%; padding: 6px; margin: 5px 0; background: #222; border: 2px solid #0ff; color: #0ff; border-radius: 4px; }
-.alert { background: #ff0044; color: #fff; padding: 10px; margin: 8px 0; border-radius: 8px; display: none; text-align: center; font-size: 14px; animation: blink 0.4s infinite; }
-@keyframes blink { 50% { opacity: 0.6; } }
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#0a0a0a;color:#f1f5f9;padding:16px;max-width:850px;margin:0 auto}
+.card{background:#111827;border-radius:18px;padding:22px;margin-bottom:18px;border:1px solid #1f2937;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+h1{font-size:26px;margin-bottom:6px;color:#3b82f6}
+h2{font-size:18px;margin-bottom:14px;color:#e5e7eb}
+.sub{color:#9ca3af;font-size:13px;margin-bottom:18px}
+input,textarea,select{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#0a0a0a;color:#f1f5f9;margin-bottom:11px;font-size:16px}
+button{background:#2563eb;color:white;border:none;padding:15px 22px;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;transition:0.2s;width:100%}
+button:active{transform:scale(0.97);background:#1d4ed8}
+.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.inv-row{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#0a0a0a;border-radius:10px;margin-bottom:10px;border-left:4px solid #2563eb}
+.status-paid{border-left-color:#16a34a}
+.status-overdue{border-left-color:#dc2626}
+.tabs{display:flex;gap:8px;margin-bottom:18px;overflow-x:auto}
+.tab{flex:1;min-width:120px;padding:11px;text-align:center;background:#1f2937;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px}
+.tab.active{background:#2563eb}
+.hidden{display:none}
+.total-box{background:#1e3a8a;padding:16px;border-radius:12px;margin-top:12px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>🛡️ VIP GUARDIAN v3.5.5 PRO</h1>
-  <div class="ai-score" id="aiScore">AI Risk: 0</div>
-</div>
+<h1>Twinz Cooperate Services</h1>
+<div class="sub">IT Solutions & Web Development | VAT: 9819040198</div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showScreen('guests')">FACE AI + BLINK</div>
+  <div class="tab active" onclick="showTab('new')">New Invoice</div>
+  <div class="tab" onclick="showTab('clients')">Clients</div>
+  <div class="tab" onclick="showTab('list')">Invoices</div>
+  <div class="tab" onclick="showTab('settings')">Company</div>
 </div>
 
-<div class="screen active" id="guests">
-  <h3>Real Face AI + Anti-Spoof Blink</h3>
-  <div class="loading" id="modelStatus">Loading AI models... 15sec</div>
-
-  <div class="video-container">
-    <video id="video" width="200" height="200" autoplay muted></video>
-    <canvas id="overlay" width="200" height="200"></canvas>
-    <canvas id="canvas" style="display:none;"></canvas>
+<!-- NEW INVOICE -->
+<div id="new" class="card">
+  <h2>Create Tax Invoice</h2>
+  <select id="clientSelect"><option value="">Select Client...</option></select>
+  <button class="btn-yellow" onclick="addClient()">+ Add Client</button>
+  
+  <div id="items" style="margin-top:16px">
+    <div class="grid">
+      <input placeholder="Service / Description" id="item0">
+      <input type="number" placeholder="Amount R" id="price0" oninput="calcTotal()">
+    </div>
   </div>
-
-  <div class="scan-status" id="scanStatus">Waiting for models...</div>
-  <div class="similarity" id="similarityScore"></div>
-
-  <input id="guestName" placeholder="Full Name">
-  <select id="guestRole"><option value="vip">Red - VIP</option><option value="staff">Blue - Staff</option></select>
-
-  <button class="btn" onclick="capturePhoto()">📸 1. Enroll Face</button>
-  <button class="btn" onclick="addGuest()" id="addBtn" disabled>2. Add to Database</button>
-  <button class="btn" onclick="startFaceScan()" id="scanBtn" disabled>🔍 Start AI Scan - BLINK 2X</button>
-
-  <div id="guestList"></div>
+  <button onclick="addItem()">+ Add Item</button>
+  
+  <div class="total-box">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span>Subtotal:</span><span>R<span id="subtotal">0.00</span></span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span>VAT 15%:</span><span>R<span id="vat">0.00</span></span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700">
+      <span>TOTAL DUE:</span><span>R<span id="total">0.00</span></span>
+    </div>
+  </div>
+  
+  <button class="btn-green" style="margin-top:16px" onclick="generateInvoice()">Generate PDF + WhatsApp Client</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<!-- CLIENTS -->
+<div id="clients" class="card hidden">
+  <h2>Client Database</h2>
+  <div id="clientList"></div>
+</div>
+
+<!-- INVOICE LIST -->
+<div id="list" class="card hidden">
+  <h2>All Invoices</h2>
+  <div id="invoiceList"></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="card hidden">
+  <h2>Company Details - Locked</h2>
+  <input value="Twinz Cooperate Services Pty Ltd" readonly>
+  <input value="Office Burgersfort Praktiseer Ext 02" readonly>
+  <input value="twinz.cooperate.services@gmail.com" readonly>
+  <input value="068 254 7352 / 069 894 9596" readonly>
+  <input value="Tax/VAT No: 9819040198 | Reg No: 2024/444303/07" readonly>
+  <input value="Standard Bank | Acc: 10 26 459 443 4 | Branch: 006145" readonly>
+  <div class="sub">Edit these in code if needed. Everything else auto-fills.</div>
+</div>
+
 <script>
-const RESET_PASSWORD = 'ADMIN123';
-let guests = JSON.parse(localStorage.getItem('vip_guests_v35') || '[]');
-let currentDescriptor = null;
-let faceScanInterval = null;
-let faceScanTimeout = null;
-let modelsLoaded = false;
-const FACE_MATCH_THRESHOLD = 0.6;
+let itemCount = 1;
+let clients = JSON.parse(localStorage.getItem('twinz_clients') || '[]');
+let invoices = JSON.parse(localStorage.getItem('twinz_invoices') || '[]');
 
-// BLINK DETECTION VARS
-let blinkCount = 0;
-let lastEAR = 1.0; // Eye Aspect Ratio
-let blinkDetected = false;
+const COMPANY = {
+  name: 'Twinz Cooperate Services Pty Ltd',
+  address: 'Office Burgersfort Praktiseer Ext 02',
+  email: 'twinz.cooperate.services@gmail.com',
+  phone: '068 254 7352 / 069 894 9596',
+  vat: '9819040198',
+  reg: '2024/444303/07',
+  bank: 'Standard Bank',
+  acc: '10 26 459 443 4',
+  branch: '006145'
+};
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function showTab(tab){
+  document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'));
+  document.getElementById(tab).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   event.target.classList.add('active');
-  if(id === 'guests') startCamera();
+  if(tab==='clients') loadClients();
+  if(tab==='list') loadInvoices();
 }
 
-// Calculate Eye Aspect Ratio - detects blinks
-function getEAR(landmarks) {
-  const leftEye = landmarks.getLeftEye();
-  const rightEye = landmarks.getRightEye();
-
-  // EAR formula: (vertical distances) / (horizontal distance)
-  const earLeft = (euclidean(leftEye[1], leftEye[5]) + euclidean(leftEye[2], leftEye[4])) / (2 * euclidean(leftEye[0], leftEye[3]));
-  const earRight = (euclidean(rightEye[1], rightEye[5]) + euclidean(rightEye[2], rightEye[4])) / (2 * euclidean(rightEye[0], rightEye[3]));
-
-  return (earLeft + earRight) / 2;
+function addItem(){
+  document.getElementById('items').insertAdjacentHTML('beforeend', `
+    <div class="grid">
+      <input placeholder="Service / Description" id="item${itemCount}">
+      <input type="number" placeholder="Amount R" id="price${itemCount}" oninput="calcTotal()">
+    </div>
+  `);
+  itemCount++;
 }
 
-function euclidean(p1, p2) {
-  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-}
-
-function detectBlink(landmarks) {
-  const ear = getEAR(landmarks);
-  const EAR_THRESHOLD = 0.25; // Eyes closed below this
-
-  if(ear < EAR_THRESHOLD && lastEAR > EAR_THRESHOLD &&!blinkDetected) {
-    blinkCount++;
-    blinkDetected = true;
-    document.getElementById('scanStatus').textContent = `👁️ Blink detected! ${blinkCount}/2`;
-    navigator.vibrate(50);
-    setTimeout(() => blinkDetected = false, 300); // debounce
+function calcTotal(){
+  let subtotal = 0;
+  for(let i=0; i<itemCount; i++){
+    subtotal += parseFloat(document.getElementById('price'+i)?.value || 0);
   }
-
-  lastEAR = ear;
+  let vat = subtotal * 0.15;
+  document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+  document.getElementById('vat').textContent = vat.toFixed(2);
+  document.getElementById('total').textContent = (subtotal + vat).toFixed(2);
 }
 
-async function loadModels() {
-  const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
-  document.getElementById('modelStatus').textContent = 'Downloading AI models... 15sec';
-
-  await Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-  ]);
-
-  modelsLoaded = true;
-  document.getElementById('modelStatus').textContent = '✅ AI Ready - Blink detection active';
-  document.getElementById('scanBtn').disabled = false;
-  document.getElementById('scanStatus').textContent = 'Ready - Person must blink 2x';
+function addClient(){
+  let name = prompt('Client Company Name:');
+  let whatsapp = prompt('Client WhatsApp +27...');
+  let email = prompt('Client Email:');
+  if(name && whatsapp){
+    clients.push({id:Date.now(), name, whatsapp, email});
+    localStorage.setItem('twinz_clients', JSON.stringify(clients));
+    loadClientSelect();
+  }
 }
 
-async function startCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({video: {width: 200, height: 200}});
-  document.getElementById('video').srcObject = stream;
+function loadClientSelect(){
+  let sel = document.getElementById('clientSelect');
+  sel.innerHTML = '<option value="">Select Client...</option>';
+  clients.forEach(c=>{
+    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+  });
 }
 
-async function capturePhoto() {
-  if(!modelsLoaded) return alert('AI loading...');
-
-  const video = document.getElementById('video');
-  const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-   .withFaceLandmarks().withFaceDescriptor();
-
-  if(!detection) return alert('No face detected!');
-
-  currentDescriptor = Array.from(detection.descriptor);
-  document.getElementById('addBtn').disabled = false;
-  alert(`✅ Face captured! Now click "Add to Database"`);
+function loadClients(){
+  let html = '';
+  clients.forEach(c=>{
+    html += `<div class="inv-row">${c.name}<br><small style="color:#9ca3af">${c.whatsapp} | ${c.email}</small></div>`;
+  });
+  document.getElementById('clientList').innerHTML = html || '<div class="sub">No clients yet. Add your first client.</div>';
 }
 
-function addGuest() {
-  const name = document.getElementById('guestName').value.trim();
-  if(!name) return alert('Enter name');
-  if(!currentDescriptor) return alert('Enroll face first');
-
-  const id = 'VIP' + Date.now().toString().slice(-6);
-  const canvas = document.getElementById('canvas');
-  canvas.width = 200; canvas.height = 200;
-  canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 200, 200);
-  const photo = canvas.toDataURL('image/png');
-
-  guests.push({name, id, photo, descriptor: currentDescriptor});
-  localStorage.setItem('vip_guests_v35', JSON.stringify(guests));
-
-  currentDescriptor = null;
-  document.getElementById('addBtn').disabled = true;
-  document.getElementById('guestName').value = '';
-  document.getElementById('scanStatus').textContent = '✅ Guest added!';
-  renderGuests();
+async function generateInvoice(){
+  const clientId = document.getElementById('clientSelect').value;
+  if(!clientId) return alert('Select client first');
+  
+  const client = clients.find(c=>c.id==clientId);
+  const total = document.getElementById('total').textContent;
+  const subtotal = document.getElementById('subtotal').textContent;
+  const vat = document.getElementById('vat').textContent;
+  const invNum = 'TCS-' + new Date().getFullYear() + '-' + String(invoices.length+1).padStart(4,'0');
+  
+  // Build items list
+  let itemsText = '';
+  for(let i=0; i<itemCount; i++){
+    let desc = document.getElementById('item'+i)?.value;
+    let price = document.getElementById('price'+i)?.value;
+    if(desc && price) itemsText += `${desc} - R${parseFloat(price).toFixed(2)}\n`;
+  }
+  
+  // PDF
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(22);
+  doc.text('TAX INVOICE', 105, 22, {align:'center'});
+  
+  doc.setFontSize(11);
+  doc.text(COMPANY.name, 20, 38);
+  doc.text(COMPANY.address, 20, 45);
+  doc.text('Email: ' + COMPANY.email, 20, 52);
+  doc.text('Tel: ' + COMPANY.phone, 20, 59);
+  doc.text('VAT No: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 20, 66);
+  
+  doc.text('Bill To: ' + client.name, 120, 38);
+  doc.text('WhatsApp: ' + client.whatsapp, 120, 45);
+  doc.text('Email: ' + client.email, 120, 52);
+  
+  doc.line(20, 75, 190, 75);
+  doc.text('Invoice No: ' + invNum, 20, 85);
+  doc.text('Date: ' + new Date().toLocaleDateString('en-ZA'), 20, 92);
+  doc.text('Due Date: 30 days', 20, 99);
+  
+  doc.text(itemsText, 20, 115);
+  doc.line(20, 150, 190, 150);
+  
+  doc.text('Subtotal: R' + subtotal, 140, 160);
+  doc.text('VAT 15%: R' + vat, 140, 167);
+  doc.setFontSize(14);
+  doc.text('TOTAL DUE: R' + total, 140, 178);
+  
+  doc.setFontSize(10);
+  doc.text('Banking Details:', 20, 195);
+  doc.text(COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 202);
+  doc.text('Please use invoice number as reference', 20, 209);
+  
+  doc.save(invNum + '.pdf');
+  
+  // Save
+  invoices.push({id:Date.now(), num:invNum, client:client.name, total, status:'unpaid', date:new Date().toISOString()});
+  localStorage.setItem('twinz_invoices', JSON.stringify(invoices));
+  
+  // WhatsApp
+  let msg = `Hi ${client.name},\n\nTAX INVOICE ${invNum} from Twinz Cooperate Services.\n\nTotal Due: R${total} incl 15% VAT\nDue: 30 days\nBank: ${COMPANY.bank} Acc: ${COMPANY.acc}\nRef: ${invNum}\n\nPDF attached. Thank you!`;
+  window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
+  
+  alert('PDF downloaded + WhatsApp opened for ' + client.name);
+  location.reload();
 }
 
-async function startFaceScan() {
-  if(!modelsLoaded) return alert('AI loading...');
-  if(guests.length === 0) return alert('No guests enrolled!');
-
-  blinkCount = 0; // RESET BLINKS
-  document.getElementById('scanStatus').textContent = 'Scanning... BLINK 2 TIMES';
-  const video = document.getElementById('video');
-  const overlay = document.getElementById('overlay');
-  const ctx = overlay.getContext('2d');
-  let matchFound = false;
-
-  faceScanInterval = setInterval(async () => {
-    const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-     .withFaceLandmarks().withFaceDescriptor();
-
-    ctx.clearRect(0, 0, 200, 200);
-
-    if(detection) {
-      const resized = faceapi.resizeResults(detection, {width: 200, height: 200});
-      const box = resized.detection.box;
-
-      // Draw face box
-      ctx.strokeStyle = blinkCount >= 2? '#0f0' : '#ffaa00';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-      // BLINK DETECTION
-      detectBlink(resized.landmarks);
-
-      // Face matching
-      let bestMatch = null;
-      let bestDistance = 999;
-
-      for(let g of guests) {
-        const distance = faceapi.euclideanDistance(
-          detection.descriptor,
-          new Float32Array(g.descriptor)
-        );
-        if(distance < bestDistance) {
-          bestDistance = distance;
-          bestMatch = g;
-        }
-      }
-
-      const matchPercent = Math.max(0, 100 - (bestDistance * 100)).toFixed(0);
-      document.getElementById('similarityScore').textContent =
-        bestMatch? `${bestMatch.name} - ${matchPercent}% | Blinks: ${blinkCount}/2` : 'No match';
-
-      // GRANT ACCESS ONLY IF: match + 2 blinks
-      if(bestDistance < FACE_MATCH_THRESHOLD && bestMatch &&!matchFound && blinkCount >= 2) {
-        matchFound = true;
-        clearInterval(faceScanInterval);
-        clearTimeout(faceScanTimeout);
-
-        ctx.strokeStyle = '#0f0';
-        ctx.strokeRect(box.x, box.y, box.width, box.height);
-        ctx.fillStyle = '#0f0';
-        ctx.font = '12px Arial';
-        ctx.fillText(`${bestMatch.name} ${matchPercent}% LIVE`, box.x, box.y - 5);
-
-        document.getElementById('scanStatus').textContent =
-          `✅ LIVE MATCH: ${bestMatch.name} - ${matchPercent}% ACCESS GRANTED`;
-
-        navigator.vibrate(200);
-        setTimeout(() => stopFaceScan(), 3000);
-      }
-    }
-  }, 200); // Check 5x per second for smooth blink detection
-
-  // 5 second timeout
-  faceScanTimeout = setTimeout(() => {
-    if(!matchFound) {
-      clearInterval(faceScanInterval);
-      document.getElementById('scanStatus').textContent = '❌ NO LIVE MATCH - DENIED';
-      ctx.strokeStyle = '#ff0044';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(50, 50, 100, 100);
-
-      alert('⚠️ UNKNOWN FACE OR NO BLINK DETECTED\nPhoto/printed image rejected!');
-      navigator.vibrate([100,100,100,100,200]);
-      setTimeout(() => stopFaceScan(), 3000);
-    }
-  }, 5000);
+function loadInvoices(){
+  let html = '';
+  invoices.sort((a,b)=>b.id-a.id).forEach(inv=>{
+    let cls = inv.status==='paid' ? 'status-paid' : '';
+    let date = new Date(inv.date).toLocaleDateString('en-ZA');
+    html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.client}<br><small style="color:#9ca3af">R${inv.total} | ${date} | ${inv.status}</small></div><button class="btn-green" style="width:auto;padding:8px 14px;font-size:14px" onclick="markPaid(${inv.id})">Mark Paid</button></div>`;
+  });
+  document.getElementById('invoiceList').innerHTML = html || '<div class="sub">No invoices yet</div>';
 }
 
-function stopFaceScan() {
-  clearInterval(faceScanInterval);
-  clearTimeout(faceScanTimeout);
-  document.getElementById('overlay').getContext('2d').clearRect(0, 0, 200, 200);
-  document.getElementById('scanStatus').textContent = 'Scan stopped';
-  blinkCount = 0;
+function markPaid(id){
+  invoices = invoices.map(i=> i.id===id ? {...i, status:'paid'} : i);
+  localStorage.setItem('twinz_invoices', JSON.stringify(invoices));
+  loadInvoices();
 }
 
-function renderGuests() {
-  document.getElementById('guestList').innerHTML = guests.map(g =>
-    `<div style="padding:5px; margin:3px; background:#1a1a1a; border-left:3px solid #0ff;">
-      <strong>${g.name}</strong> - AI + Blink
-    </div>`
-  ).join('');
-}
-
-window.onload = async () => {
-  await loadModels();
-  await startCamera();
-}
+// Init
+loadClientSelect();
+document.getElementById('price0').oninput = calcTotal;
 </script>
 </body>
 </html>
