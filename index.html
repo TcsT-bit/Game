@@ -558,8 +558,11 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
       reader.onload = ()=>resolve(reader.result);
       reader.readAsDataURL(b);
     }));
-    doc.addImage(logoImg, 'JPEG', 155, 15, 35, 35);
+    doc.addImage(logoImg, 'JPEG', 155, 15, 35, 35);  // <-- OLD POSITION
   } catch(e){}
+  ...
+  // stops at doc.save line
+}
 
   // PAID STAMP
   if(isPaid){
