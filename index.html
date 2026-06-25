@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Twinz Cooperate - GOD TIER v2.4.1</title>
+<title>Twinz Cooperate - GOD TIER v2.4.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -524,7 +524,15 @@ async function generateInvoice(){
 
   doc.setFontSize(10);
   doc.text('Banking: ' + COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 205);
-  // Portal link removed from PDF - still sent via WhatsApp
+
+  // MARK PAID SECTION ON PDF
+  doc.line(20, 220, 190, 220);
+  doc.setFontSize(12);
+  doc.text('FOR OFFICE USE:', 20, 230);
+  doc.rect(20, 238, 8, 8); // checkbox
+  doc.text('PAID', 32, 245);
+  doc.text('Date Paid: _____________', 60, 245);
+  doc.text('Signature: _________________', 20, 255);
 
   doc.save(invNum + '.pdf');
 
@@ -555,8 +563,12 @@ function loadInvoices(){
     let cls = inv.status==='paid'? 'status-paid' : inv.proofUrl? 'status-pending' : '';
     let date = new Date(inv.date).toLocaleDateString('en-ZA');
     let type = inv.useVAT? 'TAX' : 'INV';
-    let proofBtn = inv.proofUrl? `<button class="btn-yellow" style="width:auto;padding:8px" onclick="viewProof('${inv.proofUrl}')">View Proof</button><button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Approve</button>` : `<button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`;
-    html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.clientName}<br><small style="color:#9ca3af">${type} | R${inv.total} | ${date} | ${inv.status}</small></div><div>${proofBtn}</div></div>`;
+    let paidBtn = inv.status==='paid'
+     ? `<button class="btn-gray" style="width:auto;padding:8px" disabled>✓ Paid</button>`
+      : inv.proofUrl
+       ? `<button class="btn-yellow" style="width:auto;padding:8px" onclick="viewProof('${inv.proofUrl}')">View Proof</button><button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`
+        : `<button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`;
+    html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.clientName}<br><small style="color:#9ca3af">${type} | R${inv.total} | ${date} | ${inv.status}</small></div><div>${paidBtn}</div></div>`;
   });
   document.getElementById('invoiceList').innerHTML = html || '<div class="sub">No invoices yet</div>';
 }
