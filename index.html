@@ -3,550 +3,323 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v3.4 + Smart Face Match</title>
+<title>SparesHub SA - Used Tyres, Rims & Parts | GOD TIER</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
-  body { background: #000; color: #0ff; overflow: hidden; transition: all 0.3s; }
-  body.light { background: #f0f0f0; color: #003; }
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#0a0a0a;color:#f1f5f9}
+.header{background:linear-gradient(135deg,#1e3a8a,#1e40af);padding:18px;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+.header h1{font-size:22px;display:flex;align-items:center;gap:10px}
+.header.sub{font-size:12px;color:#cbd5e1;margin-top:4px}
+.container{max-width:1200px;margin:0 auto;padding:16px}
 
-.header { background: linear-gradient(90deg, #001122, #004488); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 18px; text-shadow: 0 0 10px #0ff; }
-.ai-score { background: #0f0; color: #000; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+.search-bar{background:#111827;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #1f2937}
+.search-bar input{width:100%;padding:14px;border-radius:10px;border:1px solid #374151;background:#0a0a0a;color:#f1f5f9;font-size:16px;margin-bottom:10px}
+.filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}
+.filters select{flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid #374151;background:#0a0a0a;color:#f1f5f9;font-size:14px}
 
-.tabs { display: flex; background: #111; border-bottom: 2px solid #0ff; }
-.tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; background: #1a1a1a; border-right: 1px solid #333; font-size: 10px; }
-.tab.active { background: #0ff; color: #000; }
+.tabs{display:flex;gap:8px;margin:20px 0;overflow-x:auto}
+.tab{flex:1;min-width:100px;padding:12px;text-align:center;background:#1f2937;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap}
+.tab.active{background:#2563eb}
 
-.screen { display: none; padding: 10px; height: calc(100vh - 105px); overflow-y: auto; }
-.screen.active { display: block; }
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:#111827;border-radius:16px;overflow:hidden;border:1px solid #1f2937;transition:0.3s}
+.card:hover{transform:translateY(-4px);border-color:#3b82f6;box-shadow:0 8px 30px rgba(59,130,246,0.2)}
+.card-img{width:100%;height:200px;object-fit:cover;background:#0f172a}
+.card-body{padding:14px}
+.card-title{font-size:16px;font-weight:700;margin-bottom:6px;color:#3b82f6}
+.card-price{font-size:22px;font-weight:800;color:#16a34a;margin:8px 0}
+.card-info{font-size:13px;color:#9ca3af;margin:4px 0}
+.condition{display:inline-block;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;margin-top:6px}
+.cond-good{background:#16a34a20;color:#16a34a;border:1px solid #16a34a}
+.cond-fair{background:#ca8a0420;color:#fbbf24;border:1px solid #ca8a04}
+.cond-parts{background:#dc262620;color:#f87171;border:1px solid #dc2626}
+.cond-new{background:#3b82f620;color:#60a5fa;border:1px solid #3b82f6}
 
-.btn { background: #0ff; color: #000; border: none; padding: 8px 12px; margin: 5px 2px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
-.btn-danger { background: #ff0044; color: #fff; font-size: 14px; padding: 12px; width: 100%; }
-.btn-gps { background: #00ff88; }
-.btn-whatsapp { background: #25D366; color: #fff; }
-.btn-reset { background: #8B0000; color: #fff; border: 2px solid #ff0044; }
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;margin-top:10px;transition:0.2s}
+.btn:active{transform:scale(0.97)}
+.btn-whatsapp{background:#16a34a;color:white}
+.btn-call{background:#0ea5e9;color:white}
+.btn-sell{background:#7c3aed;color:white;padding:16px;font-size:16px}
 
-  input, select { width: 100%; padding: 6px; margin: 5px 0; background: #222; border: 2px solid #0ff; color: #0ff; border-radius: 4px; font-size: 12px; }
-  body.light input, body.light select { background: #fff; color: #000; border-color: #003; }
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:999}
+.modal.active{display:flex}
+.modal-card{background:#111827;padding:24px;border-radius:18px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;border:1px solid #1f2937}
+.modal-card h2{margin-bottom:16px;color:#3b82f6}
+.modal-card input,.modal-card textarea,.modal-card select{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#0a0a0a;color:#f1f5f9;margin-bottom:10px;font-size:15px}
+.label{font-size:12px;color:#9ca3af;margin-bottom:4px;margin-top:8px}
 
-.ring { border: 3px solid; border-radius: 50%; position: relative; margin: 10px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; }
-.ring-outer { width: 240px; height: 240px; border-color: #ff4444; }
-.ring-middle { width: 160px; height: 160px; border-color: #ffaa00; position: absolute; }
-.ring-inner { width: 80px; height: 80px; border-color: #00ff00; position: absolute; }
-.rings-container { position: relative; height: 280px; display: flex; align-items: center; justify-content: center; }
+.featured-badge{position:absolute;background:#fbbf24;color:#0a0a0a;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:800;top:10px;right:10px}
+.card-img-wrap{position:relative}
 
-.guard-dot { position: absolute; width: 25px; height: 25px; background: #0ff; border-radius: 50%; border: 2px solid #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; color: #000; }
-.guard-dot.offline { background: #555; }
-.guard-battery { font-size: 6px; color: #0f0; }
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+.stat{background:#1e3a8a;padding:16px;border-radius:12px;text-align:center}
+.stat-num{font-size:28px;font-weight:800;color:#60a5fa}
+.stat-label{font-size:12px;color:#cbd5e1}
 
-.guest-card { background: #1a1a1a; border-left: 4px solid #0ff; padding: 6px; margin: 5px 0; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 8px; }
-  body.light.guest-card { background: #e0e0e0; }
-.vip { border-left-color: #ff0044; }
+.location{color:#9ca3af;font-size:12px;display:flex;align-items:center;gap:4px;margin-top:6px}
 
-.qr-box { width: 200px; height: 200px; background: #fff; margin: 8px auto; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #000; font-size: 8px; text-align: center; padding: 5px; border: 3px solid #0ff; }
-.qr-photo { width: 70px; height: 70px; border-radius: 50%; overflow: hidden; border: 2px solid #0ff; }
-.qr-photo img { width: 100%; height: 100%; object-fit: cover; }
-
-.alert { background: #ff0044; color: #fff; padding: 10px; margin: 8px 0; border-radius: 8px; display: none; text-align: center; font-size: 14px; animation: blink 0.4s infinite; }
-  @keyframes blink { 50% { opacity: 0.6; } }
-
-.log-entry { background: #222; padding: 5px; margin: 2px 0; border-radius: 3px; font-size: 10px; }
-  body.light.log-entry { background: #ddd; }
-
-  video { width: 100%; max-width: 180px; border: 2px solid #0ff; border-radius: 6px; }
-  canvas { display: none; }
-
-.face-box { position: absolute; border: 3px solid #0f0; display: none; }
-.scan-status { color: #0f0; font-size: 11px; margin-top: 5px; }
-
-.reset-section { background: #220000; border: 2px solid #ff0044; padding: 10px; margin-top: 15px; border-radius: 8px; }
-.reset-warning { color: #ff6666; font-size: 10px; margin: 5px 0; }
-.similarity { font-size: 10px; color: #ffaa00; }
+@media(max-width:650px){.grid{grid-template-columns:1fr 1fr;gap:10px}.card-img{height:140px}}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>🛡️ VIP GUARDIAN v3.4</h1>
-  <div style="display: flex; gap: 10px; align-items: center;">
-    <div class="ai-score" id="aiScore">AI Risk: 0</div>
-    <button class="btn btn-small" onclick="toggleTheme()">🌙</button>
-  </div>
+  <h1>🔧 SparesHub SA</h1>
+  <div class="sub">Used Tyres, Rims, Parts & Workshop Tools | Polokwane → All SA</div>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="showScreen('rings')">RINGS+GPS+BAT</div>
-  <div class="tab" onclick="showScreen('guests')">FACE SCAN</div>
-  <div class="tab" onclick="showScreen('plate')">PLATE OCR</div>
-  <div class="tab" onclick="showScreen('threat')">AI THREAT+PDF</div>
-  <div class="tab" onclick="showScreen('evac')">WHATSAPP+LOG</div>
-</div>
+<div class="container">
 
-<div class="alert" id="panicAlert">🚨 BLUE CODE 🚨<br>VIP TO SAFE ROOM<br>Exit: <span id="exitRoute">Route A</span></div>
-
-<!-- RINGS + GPS + BATTERY -->
-<div class="screen active" id="rings">
-  <h3>Live Guards + Battery Status</h3>
-  <div class="rings-container" id="ringMap">
-    <div class="ring ring-outer">OUTER<br>Perimeter</div>
-    <div class="ring ring-middle">MIDDLE<br>Screening</div>
-    <div class="ring ring-inner">INNER<br>VIP</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="statListings">0</div><div class="stat-label">Active Listings</div></div>
+    <div class="stat"><div class="stat-num" id="statTyres">0</div><div class="stat-label">Tyres/Rims</div></div>
+    <div class="stat"><div class="stat-num" id="statParts">0</div><div class="stat-label">Parts</div></div>
   </div>
-  <button class="btn btn-gps" onclick="shareLocation()">📍 Share GPS + Battery</button>
-  <div id="guardList" style="margin-top:8px; font-size:11px;"></div>
-</div>
 
-<!-- FACE SCAN -->
-<div class="screen" id="guests">
-  <h3>Face Recognition Access Control</h3>
-  <div style="position: relative; display: inline-block;">
-    <video id="video" autoplay></video>
-    <div class="face-box" id="faceBox"></div>
-  </div>
-  <div class="scan-status" id="scanStatus">Waiting for face...</div>
-  <div class="similarity" id="similarityScore"></div>
-  <button class="btn" onclick="startFaceScan()">🔍 Start Auto Scan</button>
-  <button class="btn" onclick="stopFaceScan()">Stop Scan</button>
-
-  <input id="guestName" placeholder="Full Name">
-  <select id="guestRole">
-    <option value="vip">Red - VIP</option>
-    <option value="staff">Blue - Staff</option>
-  </select>
-  <button class="btn" onclick="capturePhoto()">📸 Enroll Face</button>
-  <canvas id="canvas"></canvas>
-  <button class="btn" onclick="addGuest()">Add to Database</button>
-
-  <div id="guestList"></div>
-
-  <div id="qrModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:100;">
-    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#111; padding:12px; border:3px solid #0ff;">
-      <h3>VIP Access Card</h3>
-      <div class="qr-box" id="qrCode"></div>
-      <button class="btn" onclick="closeQR()">Close</button>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search: Toyota Hilux 15 inch rim, Ford Ranger tyre...">
+    <div class="filters">
+      <select id="categoryFilter" onchange="filterListings()">
+        <option value="all">All Categories</option>
+        <option value="tyres">Tyres</option>
+        <option value="rims">Rims/Mags</option>
+        <option value="engine">Engine Parts</option>
+        <option value="body">Body Parts</option>
+        <option value="electrical">Electrical</option>
+        <option value="workshop">Workshop Tools</option>
+      </select>
+      <select id="conditionFilter" onchange="filterListings()">
+        <option value="all">All Conditions</option>
+        <option value="new">New</option>
+        <option value="good">Used - Good</option>
+        <option value="fair">Used - Fair</option>
+        <option value="parts">For Parts Only</option>
+      </select>
+      <select id="makeFilter" onchange="filterListings()">
+        <option value="all">All Makes</option>
+        <option value="toyota">Toyota</option>
+        <option value="ford">Ford</option>
+        <option value="vw">VW</option>
+        <option value="nissan">Nissan</option>
+        <option value="bmw">BMW</option>
+        <option value="universal">Universal</option>
+      </select>
     </div>
   </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('browse')">Browse</div>
+    <div class="tab" onclick="showTab('tyres')">Tyres/Rims</div>
+    <div class="tab" onclick="showTab('parts')">Parts</div>
+    <div class="tab" onclick="showTab('workshop')">Workshop</div>
+  </div>
+
+  <button class="btn btn-sell" onclick="openSellModal()">+ SELL YOUR SPARES - FREE LISTING</button>
+
+  <div id="listingsGrid" class="grid" style="margin-top:20px"></div>
+
 </div>
 
-<!-- PLATE OCR -->
-<div class="screen" id="plate">
-  <h3>License Plate Scanner</h3>
-  <video id="videoPlate" autoplay></video>
-  <canvas id="canvasPlate"></canvas>
-  <input id="blacklist" placeholder="Blacklist plates: ABC123, TEST999" value="ABC123,TEST999">
-  <button class="btn" onclick="scanPlate()">📷 Scan Plate</button>
-  <div id="plateResult" style="margin-top:10px; font-size:12px; background:#001122; padding:8px; border-radius:5px;"></div>
-  <div style="font-size:10px; margin-top:5px; color:#888;">Point camera at plate, hold steady 2sec</div>
-</div>
+<!-- SELL MODAL -->
+<div id="sellModal" class="modal" onclick="closeModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <h2>List Your Spare Part</h2>
+    <div class="label">Your Name</div>
+    <input id="sellerName" placeholder="John Doe">
+    <div class="label">WhatsApp Number +27...</div>
+    <input id="sellerWhatsapp" placeholder="0712345678">
+    <div class="label">Location</div>
+    <input id="sellerLocation" placeholder="Polokwane, Limpopo" value="Polokwane, Limpopo">
 
-<!-- AI THREAT + PDF -->
-<div class="screen" id="threat">
-  <h3>AI Threat Assessment</h3>
-  <select id="threatLevel" onchange="calculateAI()">
-    <option value="1">Level 1 - Low</option>
-    <option value="3">Level 3 - Regional VIP</option>
-    <option value="5">Level 5 - Head of State</option>
-  </select>
-  <div id="checklist"></div>
-  <button class="btn" onclick="generatePDF()">📄 Export PDF Report</button>
-  <button class="btn" onclick="exportJSON()">💾 Export All Data JSON</button>
-  <div id="aiAnalysis" style="margin-top:10px; font-size:11px; color:#0f0;"></div>
-</div>
+    <div class="label">Category</div>
+    <select id="itemCategory">
+      <option value="tyres">Tyres</option>
+      <option value="rims">Rims/Mags</option>
+      <option value="engine">Engine Parts</option>
+      <option value="body">Body Parts</option>
+      <option value="electrical">Electrical</option>
+      <option value="workshop">Workshop Tools</option>
+    </select>
 
-<!-- WHATSAPP + LOG + RESET -->
-<div class="screen" id="evac">
-  <h3>Emergency Comms + Access Log</h3>
-  <input id="safeRoom" placeholder="Safe Room Location">
-  <button class="btn" onclick="setSafeRoom()">Set Safe Room</button>
+    <div class="label">Vehicle Make/Model/Year</div>
+    <input id="itemMake" placeholder="Toyota Hilux 2018">
 
-  <input id="routeA" placeholder="Route A Exit">
-  <button class="btn" onclick="saveRoutes()">Save Routes</button>
+    <div class="label">Part Description</div>
+    <textarea id="itemDesc" rows="3" placeholder="15 inch rim, 6x139 PCD, minor scratches"></textarea>
 
-  <button class="btn-danger" onclick="triggerPanic()">🚨 PANIC + WHATSAPP ALERT</button>
-  <button class="btn-whatsapp" onclick="sendWhatsApp()">📱 Test WhatsApp Message</button>
+    <div class="label">Price R</div>
+    <input type="number" id="itemPrice" placeholder="2500">
 
-  <h4 style="margin-top:12px;">Access Log</h4>
-  <div id="accessLog" style="max-height:100px; overflow-y:auto;"></div>
+    <div class="label">Condition</div>
+    <select id="itemCondition">
+      <option value="new">New</option>
+      <option value="good">Used - Good</option>
+      <option value="fair">Used - Fair</option>
+      <option value="parts">For Parts Only</option>
+    </select>
 
-  <div class="reset-section">
-    <h4 style="color: #ff0044;">⚠️ DANGER ZONE - Event Reset</h4>
-    <div class="reset-warning">This will permanently delete ALL guests, guards, logs, and settings. Cannot be undone.</div>
-    <button class="btn btn-reset" onclick="resetEvent()">🔒 RESET EVENT DATA</button>
+    <div class="label">Upload Photos</div>
+    <input type="file" id="itemPhotos" multiple accept="image/*">
+
+    <button class="btn btn-whatsapp" onclick="submitListing()">List Item FREE</button>
+    <button class="btn" style="background:#4b5563" onclick="closeModal()">Cancel</button>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script>
-const RESET_PASSWORD = 'ADMIN123';
-let guests = JSON.parse(localStorage.getItem('vip_guests_v3') || '[]');
-let guards = JSON.parse(localStorage.getItem('vip_guards_v3') || '[]');
-let logs = JSON.parse(localStorage.getItem('vip_logs_v3') || '[]');
-let currentPhoto = null;
-let faceScanInterval = null;
-let faceScanTimeout = null;
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "XXX",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+let allListings = [];
+let currentTab = 'browse';
+
+db.collection('spareshub_listings').where('status','==','active').onSnapshot(snap=>{
+  allListings = snap.docs.map(d=>({id:d.id,...d.data()}));
+  filterListings();
+  updateStats();
+});
+
+function showTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   event.target.classList.add('active');
-  if(id === 'guests') { renderGuests(); startCamera('video'); }
-  if(id === 'plate') startCamera('videoPlate');
-  if(id === 'rings') renderGuards();
-  if(id === 'evac') renderLogs();
-  calculateAI();
+  filterListings();
 }
 
-// PIXEL SIMILARITY FUNCTION - compares 2 images
-function getImageSimilarity(img1Data, img2Data) {
-  const canvas1 = document.createElement('canvas');
-  const canvas2 = document.createElement('canvas');
-  canvas1.width = canvas2.width = 50; // Downscale for speed
-  canvas1.height = canvas2.height = 50;
+function filterListings(){
+  let search = document.getElementById('searchInput').value.toLowerCase();
+  let cat = document.getElementById('categoryFilter').value;
+  let cond = document.getElementById('conditionFilter').value;
+  let make = document.getElementById('makeFilter').value;
 
-  const ctx1 = canvas1.getContext('2d');
-  const ctx2 = canvas2.getContext('2d');
+  let filtered = allListings.filter(item=>{
+    let matchSearch = item.desc.toLowerCase().includes(search) || item.make.toLowerCase().includes(search);
+    let matchCat = cat==='all' || item.category===cat;
+    let matchCond = cond==='all' || item.condition===cond;
+    let matchMake = make==='all' || item.make.toLowerCase().includes(make);
+    let matchTab = currentTab==='browse' ||
+                   (currentTab==='tyres' && ['tyres','rims'].includes(item.category)) ||
+                   (currentTab==='parts' &&!['tyres','rims','workshop'].includes(item.category)) ||
+                   (currentTab==='workshop' && item.category==='workshop');
+    return matchSearch && matchCat && matchCond && matchMake && matchTab;
+  });
 
-  const img1 = new Image();
-  const img2 = new Image();
+  renderListings(filtered);
+}
 
-  return new Promise((resolve) => {
-    img1.onload = () => {
-      ctx1.drawImage(img1, 0, 0, 50, 50);
-      const data1 = ctx1.getImageData(0, 0, 50, 50).data;
+function renderListings(listings){
+  let html = '';
+  listings.forEach(item=>{
+    let condClass = 'cond-'+item.condition;
+    let condText = item.condition==='good'?'Used - Good':item.condition==='fair'?'Used - Fair':item.condition==='parts'?'For Parts Only':'New';
+    let featured = item.featured?'<div class="featured-badge">FEATURED</div>':'';
+    let img = item.photos && item.photos[0]? item.photos[0] : 'https://via.placeholder.com/400x300/1e293b/3b82f6?text=No+Image';
 
-      img2.onload = () => {
-        ctx2.drawImage(img2, 0, 0, 50, 50);
-        const data2 = ctx2.getImageData(0, 0, 50, 50).data;
+    html += `<div class="card">
+      <div class="card-img-wrap">
+        <img src="${img}" class="card-img">
+        ${featured}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${item.make}</div>
+        <div class="card-info">${item.desc}</div>
+        <div class="card-price">R${item.price.toLocaleString()}</div>
+        <span class="condition ${condClass}">${condText}</span>
+        <div class="location">📍 ${item.location}</div>
+        <button class="btn btn-whatsapp" onclick="contactSeller('${item.whatsapp}','${item.make}','${item.id}')">WhatsApp Seller</button>
+        <button class="btn btn-call" onclick="callSeller('${item.whatsapp}')">Call Now</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('listingsGrid').innerHTML = html || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#6b7280">No spares found. Be the first to list!</div>';
+}
 
-        let diff = 0;
-        for(let i = 0; i < data1.length; i += 4) {
-          // Compare brightness of each pixel
-          const brightness1 = (data1[i] + data1[i+1] + data1[i+2]) / 3;
-          const brightness2 = (data2[i] + data2[i+1] + data2[i+2]) / 3;
-          diff += Math.abs(brightness1 - brightness2);
-        }
-        const avgDiff = diff / (50 * 50);
-        const similarity = Math.max(0, 100 - avgDiff); // 0-100%
-        resolve(similarity);
-      };
-      img2.src = img2Data;
-    };
-    img1.src = img1Data;
+function contactSeller(whatsapp, item, listingId){
+  let waNum = whatsapp.replace(/\D/g,'');
+  if(waNum.startsWith('0')) waNum = '27' + waNum.slice(1);
+  let msg = `Hi, I'm interested in: ${item} on SparesHub SA. Is it still available?`;
+  window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`);
+
+  // Track lead for monetization
+  db.collection('spareshub_leads').add({
+    listingId,
+    timestamp: new Date().toISOString(),
+    source: 'whatsapp_click'
   });
 }
 
-function resetEvent() {
-  const password = prompt('🔒 ENTER ADMIN PASSWORD TO RESET EVENT:\nDefault: ADMIN123');
-  if(password === null) return;
-  if(password!== RESET_PASSWORD) {
-    alert('❌ WRONG PASSWORD - Reset cancelled');
-    return;
+function callSeller(whatsapp){
+  window.location.href = `tel:${whatsapp}`;
+}
+
+function openSellModal(){
+  document.getElementById('sellModal').classList.add('active');
+}
+
+function closeModal(e){
+  if(!e || e.target.id === 'sellModal') document.getElementById('sellModal').classList.remove('active');
+}
+
+async function submitListing(){
+  let name = document.getElementById('sellerName').value;
+  let whatsapp = document.getElementById('sellerWhatsapp').value;
+  let location = document.getElementById('sellerLocation').value;
+  let category = document.getElementById('itemCategory').value;
+  let make = document.getElementById('itemMake').value;
+  let desc = document.getElementById('itemDesc').value;
+  let price = parseFloat(document.getElementById('itemPrice').value);
+  let condition = document.getElementById('itemCondition').value;
+  let files = document.getElementById('itemPhotos').files;
+
+  if(!name ||!whatsapp ||!make ||!desc ||!price) return alert('Fill all fields');
+
+  let photos = [];
+  for(let i=0; i<files.length; i++){
+    let ref = storage.ref(`spares/${Date.now()}_${files[i].name}`);
+    await ref.put(files[i]);
+    let url = await ref.getDownloadURL();
+    photos.push(url);
   }
-  const confirm1 = confirm('⚠️ WARNING: This will delete ALL event data!\nGuests: ' + guests.length + '\nGuards: ' + guards.length + '\nLogs: ' + logs.length + '\n\nContinue?');
-  if(!confirm1) return;
-  const confirm2 = confirm('🚨 FINAL CONFIRMATION:\nThis action CANNOT be undone.\nType OK in next prompt to proceed.');
-  if(!confirm2) return;
-  const finalCheck = prompt('Type "OK" to confirm reset:');
-  if(finalCheck!== 'OK') {
-    alert('Reset cancelled');
-    return;
-  }
-  const resetLog = {time: new Date().toLocaleTimeString(), name: 'SYSTEM', id: 'RESET', action: 'EVENT RESET'};
-  localStorage.setItem('vip_logs_v3', JSON.stringify([resetLog]));
-  localStorage.removeItem('vip_guests_v3');
-  localStorage.removeItem('vip_guards_v3');
-  localStorage.removeItem('vip_logs_v3');
-  localStorage.removeItem('vip_saferoom_v3');
-  localStorage.removeItem('vip_routes_v3');
-  guests = []; guards = []; logs = [];
-  alert('✅ EVENT RESET COMPLETE\nAll data has been wiped.');
-  renderGuests(); renderGuards(); renderLogs(); calculateAI();
-}
 
-function toggleTheme() {
-  document.body.classList.toggle('light');
-  event.target.textContent = document.body.classList.contains('light')? '☀️' : '🌙';
-}
-
-function startCamera(id) {
-  navigator.mediaDevices.getUserMedia({video: true}).then(stream => {
-    document.getElementById(id).srcObject = stream;
-  }).catch(() => alert('Camera denied'));
-}
-
-function capturePhoto() {
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  canvas.width = 200; canvas.height = 200;
-  canvas.getContext('2d').drawImage(video, 0, 0, 200, 200);
-  currentPhoto = canvas.toDataURL('image/png');
-  alert('Face enrolled! Keep same lighting/angle for best match.');
-}
-
-// SMART FACE RECOGNITION WITH SIMILARITY CHECK
-function startFaceScan() {
-  if(guests.length === 0) return alert('No guests enrolled yet!');
-
-  document.getElementById('scanStatus').textContent = 'Scanning faces... 5sec timeout';
-  document.getElementById('faceBox').style.display = 'block';
-  document.getElementById('faceBox').style.width = '100px';
-  document.getElementById('faceBox').style.height = '100px';
-  document.getElementById('faceBox').style.left = '40px';
-  document.getElementById('faceBox').style.top = '30px';
-  document.getElementById('similarityScore').textContent = '';
-
-  let matchFound = false;
-
-  faceScanInterval = setInterval(async () => {
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(document.getElementById('video'), 0, 0, 200, 200);
-    const currentFrame = canvas.toDataURL();
-
-    // Check against all enrolled guests
-    for(let g of guests) {
-      if(!g.photo || matchFound) continue;
-
-      const similarity = await getImageSimilarity(g.photo, currentFrame);
-      document.getElementById('similarityScore').textContent = `Match: ${g.name} - ${similarity.toFixed(0)}%`;
-
-      // Need >70% similarity to grant access
-      if(similarity > 70) {
-        matchFound = true;
-        clearInterval(faceScanInterval);
-        clearTimeout(faceScanTimeout);
-
-        document.getElementById('scanStatus').textContent = `✅ MATCH FOUND: ${g.name} - ${similarity.toFixed(0)}% ACCESS GRANTED`;
-        document.getElementById('faceBox').style.borderColor = '#0f0';
-
-        logs.push({time: new Date().toLocaleTimeString(), name: g.name, id: g.id, action: `FACE SCAN - GRANTED ${similarity.toFixed(0)}%`});
-        localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
-        renderLogs();
-        navigator.vibrate(200);
-
-        setTimeout(() => stopFaceScan(), 2000);
-        break;
-      }
-    }
-  }, 1000); // Check every 1sec
-
-  // 5 second timeout - if no match found
-  faceScanTimeout = setTimeout(() => {
-    if(!matchFound) {
-      clearInterval(faceScanInterval);
-      document.getElementById('scanStatus').textContent = '❌ NO MATCH - ACCESS DENIED';
-      document.getElementById('faceBox').style.borderColor = '#ff0044';
-
-      alert('⚠️ UNKNOWN FACE DETECTED\nNo match in database after 5 seconds!');
-      logs.push({time: new Date().toLocaleTimeString(), name: 'UNKNOWN FACE', id: 'DENIED', action: 'FACE SCAN - DENIED'});
-      localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
-      renderLogs();
-      navigator.vibrate([100,100,100,100,200]);
-
-      setTimeout(() => stopFaceScan(), 3000);
-    }
-  }, 5000);
-}
-
-function stopFaceScan() {
-  clearInterval(faceScanInterval);
-  clearTimeout(faceScanTimeout);
-  document.getElementById('faceBox').style.display = 'none';
-  document.getElementById('faceBox').style.borderColor = '#0f0';
-  document.getElementById('scanStatus').textContent = 'Scan stopped';
-  document.getElementById('similarityScore').textContent = '';
-}
-
-function addGuest() {
-  const name = document.getElementById('guestName').value.trim();
-  const role = document.getElementById('guestRole').value;
-  if(!name ||!currentPhoto) return alert('Name + Photo required');
-  const id = 'VIP' + Date.now().toString().slice(-6);
-  guests.push({name, role, id, photo: currentPhoto, checked: false});
-  localStorage.setItem('vip_guests_v3', JSON.stringify(guests));
-  document.getElementById('qrCode').innerHTML = `
-    <div class="qr-photo"><img src="${currentPhoto}"></div>
-    <div>${name}<br>${id}<br>${role.toUpperCase()}</div>
-  `;
-  document.getElementById('qrModal').style.display = 'block';
-  document.getElementById('guestName').value = '';
-  currentPhoto = null;
-  renderGuests();
-  calculateAI();
-}
-
-function renderGuests() {
-  document.getElementById('guestList').innerHTML = guests.map(g => `
-    <div class="guest-card ${g.role}">
-      <img src="${g.photo}" style="width:30px; height:30px; border-radius:50%;">
-      <div><strong>${g.name}</strong><br>${g.role.toUpperCase()} - ${g.id}</div>
-    </div>
-  `).join('');
-}
-
-function closeQR() {
-  document.getElementById('qrModal').style.display = 'none';
-}
-
-// PLATE OCR
-function scanPlate() {
-  const video = document.getElementById('videoPlate');
-  const canvas = document.getElementById('canvasPlate');
-  canvas.width = 400; canvas.height = 200;
-  canvas.getContext('2d').drawImage(video, 0, 0, 400, 200);
-  document.getElementById('plateResult').textContent = 'Scanning plate...';
-  Tesseract.recognize(canvas, 'eng', {
-    logger: m => console.log(m)
-  }).then(({ data: { text } }) => {
-    const plate = text.replace(/[^A-Z0-9]/g, '').substring(0, 8);
-    const blacklist = document.getElementById('blacklist').value.split(',').map(p => p.trim().toUpperCase());
-    const isBlacklisted = blacklist.some(b => plate.includes(b) && b.length > 0);
-    document.getElementById('plateResult').innerHTML = `
-      <strong>Detected:</strong> ${plate || 'None'}<br>
-      <strong>Status:</strong> ${isBlacklisted? '🚨 BLACKLISTED - DENY ENTRY' : '✅ CLEAR - ALLOW ENTRY'}
-    `;
-    if(isBlacklisted) {
-      navigator.vibrate([200,100,200]);
-      logs.push({time: new Date().toLocaleTimeString(), name: 'PLATE:'+plate, id: 'BLACKLIST', action: 'DENIED'});
-      localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
-      renderLogs();
-    }
+  await db.collection('spareshub_listings').add({
+    sellerName: name,
+    whatsapp,
+    location,
+    category,
+    make,
+    desc,
+    price,
+    condition,
+    photos,
+    status: 'active',
+    featured: false,
+    date: new Date().toISOString()
   });
+
+  alert('Listed successfully! Your spare is now live 🔥');
+  closeModal();
+  document.getElementById('sellModal').querySelectorAll('input,textarea').forEach(i=>i.value='');
 }
 
-// GPS + BATTERY
-function shareLocation() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    navigator.getBattery().then(battery => {
-      const guard = {
-        name: 'Guard' + (guards.length + 1),
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        battery: Math.round(battery.level * 100),
-        online: true,
-        ring: guards.length < 2? 'inner' : guards.length < 5? 'middle' : 'outer'
-      };
-      guards.push(guard);
-      localStorage.setItem('vip_guards_v3', JSON.stringify(guards));
-      renderGuards();
-      calculateAI();
-    });
-  }, () => alert('Location denied'));
+function updateStats(){
+  document.getElementById('statListings').textContent = allListings.length;
+  document.getElementById('statTyres').textContent = allListings.filter(i=>['tyres','rims'].includes(i.category)).length;
+  document.getElementById('statParts').textContent = allListings.filter(i=>!['tyres','rims','workshop'].includes(i.category)).length;
 }
 
-function renderGuards() {
-  document.querySelectorAll('.guard-dot').forEach(d => d.remove());
-  const map = document.getElementById('ringMap');
-  guards.forEach((g, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'guard-dot' + (g.online? '' : ' offline');
-    dot.innerHTML = `${i+1}<div class="guard-battery">${g.battery}%</div>`;
-    const angle = (i * 72) * Math.PI / 180;
-    const radius = g.ring === 'inner'? 35 : g.ring === 'middle'? 75 : 110;
-    dot.style.left = `calc(50% + ${Math.cos(angle) * radius}px - 12px)`;
-    dot.style.top = `calc(50% + ${Math.sin(angle) * radius}px - 12px)`;
-    map.appendChild(dot);
-  });
-  document.getElementById('guardList').innerHTML = guards.map(g =>
-    `<div>${g.name} - ${g.ring} ring - Battery: ${g.battery}% ${g.online? '🟢' : '🔴'}</div>`
-  ).join('');
-}
-
-// AI THREAT SCORE
-function calculateAI() {
-  const level = parseInt(document.getElementById('threatLevel').value);
-  const checkedCount = document.querySelectorAll('#checklist input:checked').length;
-  const totalChecks = document.querySelectorAll('#checklist input').length;
-  const guardCount = guards.length;
-  const vipCount = guests.filter(g => g.role === 'vip').length;
-  let score = 100 - (level * 15) + (guardCount * 5) + (checkedCount * 3) - (vipCount * 2);
-  score = Math.max(0, Math.min(100, score));
-  document.getElementById('aiScore').textContent = `AI Risk: ${score}`;
-  document.getElementById('aiScore').style.background = score > 70? '#0f0' : score > 40? '#ffaa00' : '#ff0044';
-  document.getElementById('aiAnalysis').innerHTML = `
-    Analysis: ${guardCount} guards for ${vipCount} VIPs.
-    Checklist: ${checkedCount}/${totalChecks} complete.
-    Recommendation: ${score < 50? 'ADD MORE GUARDS' : score < 70? 'COMPLETE CHECKLIST' : 'SECURE'}
-  `;
-}
-
-function updateChecklist() {
-  const level = parseInt(document.getElementById('threatLevel').value);
-  const tasks = {
-    1: ['Guest list check', '1 guard'],
-    3: ['3-ring perimeter', 'QR verification', '2hr sweep'],
-    5: ['Anti-drone', 'Bomb sweep', 'Armored transport', '2-person rule 24/7', 'Safe room stocked']
-  };
-  document.getElementById('checklist').innerHTML = tasks[level].map((t, i) => `
-    <div class="checklist-item"><input type="checkbox" id="t${i}" onchange="calculateAI()"><label for="t${i}"> ${t}</label></div>
-  `).join('');
-  calculateAI();
-}
-
-// PDF + JSON EXPORT
-function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(18);
-  doc.text('VIP SECURITY REPORT v3.4', 20, 20);
-  doc.setFontSize(12);
-  doc.text('ASIS EP Standard + AI Analysis', 20, 30);
-  doc.text('Date: ' + new Date().toLocaleString(), 20, 40);
-  doc.text('Threat Level: ' + document.getElementById('threatLevel').value, 20, 50);
-  doc.text('AI Risk Score: ' + document.getElementById('aiScore').textContent, 20, 60);
-  doc.text('Total Guests: ' + guests.length, 20, 70);
-  doc.text('Total Guards: ' + guards.length, 20, 80);
-  doc.save('VIP_Security_v3.4_Report.pdf');
-}
-
-function exportJSON() {
-  const data = {guests, guards, logs, timestamp: new Date().toISOString()};
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'VIP_Event_Backup.json';
-  a.click();
-}
-
-// WHATSAPP + EVAC
-function setSafeRoom() {
-  localStorage.setItem('vip_saferoom_v3', document.getElementById('safeRoom').value);
-  alert('Safe room saved');
-}
-
-function saveRoutes() {
-  localStorage.setItem('vip_routes_v3', JSON.stringify({
-    A: document.getElementById('routeA').value
-  }));
-  alert('Routes saved');
-}
-
-function triggerPanic() {
-  const routes = JSON.parse(localStorage.getItem('vip_routes_v3') || '{}');
-  document.getElementById('exitRoute').textContent = routes.A || 'Route A';
-  document.getElementById('panicAlert').style.display = 'block';
-  if(navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
-  logs.push({time: new Date().toLocaleTimeString(), name: 'SYSTEM', id: 'PANIC'});
-  localStorage.setItem('vip_logs_v3', JSON.stringify(logs));
-  renderLogs();
-  setTimeout(sendWhatsApp, 1000);
-}
-
-function sendWhatsApp() {
-  const message = encodeURIComponent('🚨 BLUE CODE - VIP EMERGENCY 🚨\nVIP to safe room NOW!\nExit: ' + (JSON.parse(localStorage.getItem('vip_routes_v3') || '{}').A || 'Route A'));
-  window.open(`https://wa.me/?text=${message}`, '_blank');
-}
-
-function renderLogs() {
-  document.getElementById('accessLog').innerHTML = logs.slice(-8).reverse().map(l =>
-    `<div class="log-entry">${l.time} - ${l.name} - ${l.id} ${l.action || ''}</div>`
-  ).join('');
-}
-
-window.onload = () => { updateChecklist(); renderGuests(); renderGuards(); renderLogs(); calculateAI(); }
+document.getElementById('searchInput').addEventListener('input', filterListings);
 </script>
 </body>
 </html>
