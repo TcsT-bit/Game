@@ -3,46 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VIP GUARDIAN v3.5.3 - Fast AI</title>
+<title>VIP GUARDIAN v3.5.5 PRO + Anti-Spoof</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
 body { background: #000; color: #0ff; overflow: hidden; }
-.header { background: linear-gradient(90deg, #001122, #004488); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; }
+.header { background: linear-gradient(90deg, #001122, #004488); padding: 10px; text-align: center; border-bottom: 3px solid #0ff; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 18px; text-shadow: 0 0 10px #0ff; }
 .btn { background: #0ff; color: #000; border: none; padding: 8px 12px; margin: 5px 2px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
-.btn:disabled { background: #444; color: #888; }
+.btn:disabled { background: #444; color: #888; cursor: not-allowed; }
 .video-container { position: relative; display: inline-block; }
 video, canvas { border: 2px solid #0ff; border-radius: 6px; }
 canvas { position: absolute; top: 0; left: 0; }
-.loading { color: #ffaa00; font-size: 12px; }
 .scan-status { color: #0f0; font-size: 11px; margin-top: 5px; }
-.similarity { font-size: 11px; color: #ffaa00; }
+.similarity { font-size: 11px; color: #ffaa00; margin-top: 3px; }
+.loading { color: #ffaa00; font-size: 12px; }
 input, select { width: 100%; padding: 6px; margin: 5px 0; background: #222; border: 2px solid #0ff; color: #0ff; border-radius: 4px; }
-/* rest of your CSS same */
+.alert { background: #ff0044; color: #fff; padding: 10px; margin: 8px 0; border-radius: 8px; display: none; text-align: center; font-size: 14px; animation: blink 0.4s infinite; }
+@keyframes blink { 50% { opacity: 0.6; } }
 </style>
 </head>
 <body>
 
-<div class="header"><h1>🛡️ VIP GUARDIAN v3.5.3 FAST</h1></div>
+<div class="header">
+  <h1>🛡️ VIP GUARDIAN v3.5.5 PRO</h1>
+  <div class="ai-score" id="aiScore">AI Risk: 0</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showScreen('guests')">FACE AI + BLINK</div>
+</div>
 
 <div class="screen active" id="guests">
-  <h3>Real Face Recognition AI</h3>
-  <div class="loading" id="modelStatus">Checking cache...</div>
-  
+  <h3>Real Face AI + Anti-Spoof Blink</h3>
+  <div class="loading" id="modelStatus">Loading AI models... 15sec</div>
+
   <div class="video-container">
     <video id="video" width="200" height="200" autoplay muted></video>
     <canvas id="overlay" width="200" height="200"></canvas>
     <canvas id="canvas" style="display:none;"></canvas>
   </div>
-  
-  <div class="scan-status" id="scanStatus">Initializing...</div>
+
+  <div class="scan-status" id="scanStatus">Waiting for models...</div>
   <div class="similarity" id="similarityScore"></div>
-  
+
   <input id="guestName" placeholder="Full Name">
   <select id="guestRole"><option value="vip">Red - VIP</option><option value="staff">Blue - Staff</option></select>
-  
+
   <button class="btn" onclick="capturePhoto()">📸 1. Enroll Face</button>
   <button class="btn" onclick="addGuest()" id="addBtn" disabled>2. Add to Database</button>
-  <button class="btn" onclick="startFaceScan()" id="scanBtn" disabled>🔍 Start AI Scan</button>
+  <button class="btn" onclick="startFaceScan()" id="scanBtn" disabled>🔍 Start AI Scan - BLINK 2X</button>
+
   <div id="guestList"></div>
 </div>
 
@@ -57,51 +67,64 @@ let faceScanTimeout = null;
 let modelsLoaded = false;
 const FACE_MATCH_THRESHOLD = 0.6;
 
-// FAST + CACHED MODEL LOADER
+// BLINK DETECTION VARS
+let blinkCount = 0;
+let lastEAR = 1.0; // Eye Aspect Ratio
+let blinkDetected = false;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if(id === 'guests') startCamera();
+}
+
+// Calculate Eye Aspect Ratio - detects blinks
+function getEAR(landmarks) {
+  const leftEye = landmarks.getLeftEye();
+  const rightEye = landmarks.getRightEye();
+
+  // EAR formula: (vertical distances) / (horizontal distance)
+  const earLeft = (euclidean(leftEye[1], leftEye[5]) + euclidean(leftEye[2], leftEye[4])) / (2 * euclidean(leftEye[0], leftEye[3]));
+  const earRight = (euclidean(rightEye[1], rightEye[5]) + euclidean(rightEye[2], rightEye[4])) / (2 * euclidean(rightEye[0], rightEye[3]));
+
+  return (earLeft + earRight) / 2;
+}
+
+function euclidean(p1, p2) {
+  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+}
+
+function detectBlink(landmarks) {
+  const ear = getEAR(landmarks);
+  const EAR_THRESHOLD = 0.25; // Eyes closed below this
+
+  if(ear < EAR_THRESHOLD && lastEAR > EAR_THRESHOLD &&!blinkDetected) {
+    blinkCount++;
+    blinkDetected = true;
+    document.getElementById('scanStatus').textContent = `👁️ Blink detected! ${blinkCount}/2`;
+    navigator.vibrate(50);
+    setTimeout(() => blinkDetected = false, 300); // debounce
+  }
+
+  lastEAR = ear;
+}
+
 async function loadModels() {
   const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
-  const CACHE_KEY = 'faceapi_v1';
+  document.getElementById('modelStatus').textContent = 'Downloading AI models... 15sec';
 
-  document.getElementById('modelStatus').textContent = 'Checking cache...';
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+  ]);
 
-  try {
-    // Try load from IndexedDB cache first
-    const cached = await faceapi.tf.io.listModels();
-    if(cached[`indexeddb://${CACHE_KEY}`]) {
-      document.getElementById('modelStatus').textContent = 'Loading from cache... 2sec';
-      await faceapi.nets.tinyFaceDetector.load(`indexeddb://${CACHE_KEY}/tinyFaceDetector`);
-      await faceapi.nets.faceRecognitionNet.load(`indexeddb://${CACHE_KEY}/faceRecognitionNet`);
-    } else {
-      // First time: download from CDN
-      document.getElementById('modelStatus').textContent = 'Downloading AI models... 12-15sec on 4G';
-      
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-      ]);
-
-      // Save to cache for next time
-      document.getElementById('modelStatus').textContent = 'Caching for offline use...';
-      await faceapi.tf.io.copyModel(
-        `${MODEL_URL}/tiny_face_detector_model-shard1`,
-        `indexeddb://${CACHE_KEY}/tinyFaceDetector`
-      );
-      await faceapi.tf.io.copyModel(
-        `${MODEL_URL}/face_recognition_model-shard1`,
-        `indexeddb://${CACHE_KEY}/faceRecognitionNet`
-      );
-    }
-
-    modelsLoaded = true;
-    document.getElementById('modelStatus').textContent = '✅ AI Ready - Fast Mode';
-    document.getElementById('scanBtn').disabled = false;
-    document.getElementById('scanStatus').textContent = 'Ready to scan';
-  } catch(e) {
-    console.error(e);
-    document.getElementById('modelStatus').textContent = '❌ Failed. Using Basic Mode';
-    document.getElementById('scanStatus').textContent = 'No AI - Hand detection only';
-    // You can add fallback pixel detection here
-  }
+  modelsLoaded = true;
+  document.getElementById('modelStatus').textContent = '✅ AI Ready - Blink detection active';
+  document.getElementById('scanBtn').disabled = false;
+  document.getElementById('scanStatus').textContent = 'Ready - Person must blink 2x';
 }
 
 async function startCamera() {
@@ -110,14 +133,14 @@ async function startCamera() {
 }
 
 async function capturePhoto() {
-  if(!modelsLoaded) return alert('AI still loading...');
-  
+  if(!modelsLoaded) return alert('AI loading...');
+
   const video = document.getElementById('video');
   const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-    .withFaceDescriptor();
-  
-  if(!detection) return alert('No face detected! Move back + good light.');
-  
+   .withFaceLandmarks().withFaceDescriptor();
+
+  if(!detection) return alert('No face detected!');
+
   currentDescriptor = Array.from(detection.descriptor);
   document.getElementById('addBtn').disabled = false;
   alert(`✅ Face captured! Now click "Add to Database"`);
@@ -125,7 +148,7 @@ async function capturePhoto() {
 
 function addGuest() {
   const name = document.getElementById('guestName').value.trim();
-  if(!name) return alert('Enter name first');
+  if(!name) return alert('Enter name');
   if(!currentDescriptor) return alert('Enroll face first');
 
   const id = 'VIP' + Date.now().toString().slice(-6);
@@ -148,22 +171,32 @@ async function startFaceScan() {
   if(!modelsLoaded) return alert('AI loading...');
   if(guests.length === 0) return alert('No guests enrolled!');
 
-  document.getElementById('scanStatus').textContent = 'AI Scanning... 5sec timeout';
+  blinkCount = 0; // RESET BLINKS
+  document.getElementById('scanStatus').textContent = 'Scanning... BLINK 2 TIMES';
   const video = document.getElementById('video');
-  const ctx = document.getElementById('overlay').getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
   let matchFound = false;
 
   faceScanInterval = setInterval(async () => {
     const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-      .withFaceDescriptor();
-    
+     .withFaceLandmarks().withFaceDescriptor();
+
     ctx.clearRect(0, 0, 200, 200);
+
     if(detection) {
-      const box = detection.detection.box;
-      ctx.strokeStyle = '#0f0';
+      const resized = faceapi.resizeResults(detection, {width: 200, height: 200});
+      const box = resized.detection.box;
+
+      // Draw face box
+      ctx.strokeStyle = blinkCount >= 2? '#0f0' : '#ffaa00';
       ctx.lineWidth = 3;
       ctx.strokeRect(box.x, box.y, box.width, box.height);
 
+      // BLINK DETECTION
+      detectBlink(resized.landmarks);
+
+      // Face matching
       let bestMatch = null;
       let bestDistance = 999;
 
@@ -179,27 +212,41 @@ async function startFaceScan() {
       }
 
       const matchPercent = Math.max(0, 100 - (bestDistance * 100)).toFixed(0);
-      document.getElementById('similarityScore').textContent = 
-        bestMatch? `${bestMatch.name} - ${matchPercent}%` : 'No match';
+      document.getElementById('similarityScore').textContent =
+        bestMatch? `${bestMatch.name} - ${matchPercent}% | Blinks: ${blinkCount}/2` : 'No match';
 
-      if(bestDistance < FACE_MATCH_THRESHOLD && bestMatch &&!matchFound) {
+      // GRANT ACCESS ONLY IF: match + 2 blinks
+      if(bestDistance < FACE_MATCH_THRESHOLD && bestMatch &&!matchFound && blinkCount >= 2) {
         matchFound = true;
         clearInterval(faceScanInterval);
         clearTimeout(faceScanTimeout);
-        document.getElementById('scanStatus').textContent = 
-          `✅ MATCH: ${bestMatch.name} - ${matchPercent}% ACCESS GRANTED`;
+
+        ctx.strokeStyle = '#0f0';
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+        ctx.fillStyle = '#0f0';
+        ctx.font = '12px Arial';
+        ctx.fillText(`${bestMatch.name} ${matchPercent}% LIVE`, box.x, box.y - 5);
+
+        document.getElementById('scanStatus').textContent =
+          `✅ LIVE MATCH: ${bestMatch.name} - ${matchPercent}% ACCESS GRANTED`;
+
         navigator.vibrate(200);
         setTimeout(() => stopFaceScan(), 3000);
       }
     }
-  }, 500);
+  }, 200); // Check 5x per second for smooth blink detection
 
+  // 5 second timeout
   faceScanTimeout = setTimeout(() => {
     if(!matchFound) {
       clearInterval(faceScanInterval);
-      document.getElementById('scanStatus').textContent = '❌ NO MATCH - DENIED';
-      alert('⚠️ UNKNOWN FACE DETECTED');
-      navigator.vibrate([100,100,100]);
+      document.getElementById('scanStatus').textContent = '❌ NO LIVE MATCH - DENIED';
+      ctx.strokeStyle = '#ff0044';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(50, 50, 100, 100);
+
+      alert('⚠️ UNKNOWN FACE OR NO BLINK DETECTED\nPhoto/printed image rejected!');
+      navigator.vibrate([100,100,100,100,200]);
       setTimeout(() => stopFaceScan(), 3000);
     }
   }, 5000);
@@ -210,17 +257,18 @@ function stopFaceScan() {
   clearTimeout(faceScanTimeout);
   document.getElementById('overlay').getContext('2d').clearRect(0, 0, 200, 200);
   document.getElementById('scanStatus').textContent = 'Scan stopped';
+  blinkCount = 0;
 }
 
 function renderGuests() {
-  document.getElementById('guestList').innerHTML = guests.map(g => 
+  document.getElementById('guestList').innerHTML = guests.map(g =>
     `<div style="padding:5px; margin:3px; background:#1a1a1a; border-left:3px solid #0ff;">
-      <strong>${g.name}</strong> - AI Face
+      <strong>${g.name}</strong> - AI + Blink
     </div>`
   ).join('');
 }
 
-window.onload = async () => { 
+window.onload = async () => {
   await loadModels();
   await startCamera();
 }
