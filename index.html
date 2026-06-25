@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Twinz Cooperate - GOD TIER v2.1</title>
+<title>Twinz Cooperate - GOD TIER v2.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -20,10 +20,15 @@ h2{font-size:18px;margin-bottom:14px;color:#e5e7eb}
 input,textarea,select{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#0a0a0a;color:#f1f5f9;margin-bottom:11px;font-size:16px}
 button{background:#2563eb;color:white;border:none;padding:15px 22px;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;transition:0.2s;width:100%}
 button:active{transform:scale(0.97);background:#1d4ed8}
-.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}.btn-purple{background:#7c3aed}.btn-blue{background:#0ea5e9}
+.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}.btn-purple{background:#7c3aed}.btn-blue{background:#0ea5e9}.btn-cyan{background:#06b6d4}
 .grid{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .inv-row{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#0a0a0a;border-radius:10px;margin-bottom:10px;border-left:4px solid #2563eb}
+.client-folder{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px;margin-bottom:12px}
+.client-folder h3{color:#3b82f6;margin-bottom:8px;font-size:16px}
+.link-box{display:flex;gap:8px;margin-bottom:8px}
+.link-box a{flex:1;background:#1e293b;padding:10px;border-radius:8px;text-decoration:none;color:#60a5fa;font-size:13px;text-align:center;border:1px solid #334155}
+.link-box a:hover{background:#334155}
 .status-paid{border-left-color:#16a34a}
 .status-overdue{border-left-color:#dc2626}
 .status-pending{border-left-color:#ca8a04}
@@ -35,11 +40,12 @@ button:active{transform:scale(0.97);background:#1d4ed8}
 .stat-card{background:linear-gradient(135deg,#1e3a8a,#1e40af);padding:20px;border-radius:14px;text-align:center}
 .stat-num{font-size:32px;font-weight:800;color:#60a5fa}
 .portal-link{background:#0a0a0a;padding:12px;border-radius:8px;border:1px dashed #3b82f6;margin:10px 0;word-break:break-all;font-size:13px}
-.client-actions{display:flex;gap:8px;margin-top:8px}
+.client-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .client-actions button{padding:8px 12px;font-size:13px;width:auto}
 .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:999}
 .modal.active{display:flex}
-.modal-card{background:#111827;padding:24px;border-radius:16px;max-width:400px;width:90%}
+.modal-card{background:#111827;padding:24px;border-radius:16px;max-width:420px;width:90%;max-height:90vh;overflow-y:auto}
+.label{font-size:12px;color:#9ca3af;margin-bottom:4px;margin-top:8px}
 @media(max-width:650px){.grid,.grid-3{grid-template-columns:1fr}}
 </style>
 </head>
@@ -52,7 +58,7 @@ button:active{transform:scale(0.97);background:#1d4ed8}
   <div class="tab active" onclick="showTab('dashboard')">Dashboard</div>
   <div class="tab" onclick="showTab('new')">New Invoice</div>
   <div class="tab" onclick="showTab('recurring')">Recurring</div>
-  <div class="tab" onclick="showTab('clients')">Clients</div>
+  <div class="tab" onclick="showTab('clients')">Client Folders</div>
   <div class="tab" onclick="showTab('list')">Invoices</div>
   <div class="tab" onclick="showTab('reports')">Reports</div>
 </div>
@@ -107,9 +113,10 @@ button:active{transform:scale(0.97);background:#1d4ed8}
   <div id="recList" style="margin-top:20px"></div>
 </div>
 
-<!-- CLIENTS -->
+<!-- CLIENT FOLDERS -->
 <div id="clients" class="card hidden">
-  <h2>Client Database - Tap to Edit</h2>
+  <h2>Client Project Folders</h2>
+  <div class="sub">Each client has their own folder. Save app + website links for quick access.</div>
   <div id="clientList"></div>
 </div>
 
@@ -128,11 +135,24 @@ button:active{transform:scale(0.97);background:#1d4ed8}
 <!-- EDIT CLIENT MODAL -->
 <div id="editModal" class="modal" onclick="closeModal(event)">
   <div class="modal-card" onclick="event.stopPropagation()">
-    <h2>Edit Client</h2>
+    <h2>Edit Client Folder</h2>
+    <div class="label">Company Name</div>
     <input id="editName" placeholder="Company Name">
+    <div class="label">WhatsApp +27...</div>
     <input id="editWhatsapp" placeholder="WhatsApp +27...">
+    <div class="label">Email</div>
     <input id="editEmail" placeholder="Email">
-    <button class="btn-green" onclick="saveClient()">Save Changes</button>
+
+    <div class="label">Client App Link</div>
+    <input id="editApp" placeholder="https://yourapp.github.io/...">
+
+    <div class="label">Client Website Link</div>
+    <input id="editWebsite" placeholder="https://yourwebsite.github.io/...">
+
+    <div class="label">Notes / Credentials</div>
+    <textarea id="editNotes" rows="3" placeholder="Hosting login, domain info, etc"></textarea>
+
+    <button class="btn-green" onclick="saveClient()">Save Folder</button>
     <button class="btn-red" onclick="deleteClient()">Delete Client</button>
     <button class="btn-blue" onclick="closeModal()">Cancel</button>
   </div>
@@ -225,7 +245,13 @@ async function addClient(){
   let whatsapp = prompt('Client WhatsApp +27...');
   let email = prompt('Client Email:');
   if(name && whatsapp){
-    await db.collection('twinz_clients').add({name, whatsapp, email, portalId: Math.random().toString(36).substr(2,9)});
+    await db.collection('twinz_clients').add({
+      name, whatsapp, email,
+      appLink: '',
+      websiteLink: '',
+      notes: '',
+      portalId: Math.random().toString(36).substr(2,9)
+    });
   }
 }
 
@@ -243,17 +269,35 @@ function loadClients(){
   let html = '';
   clients.forEach(c=>{
     let portalUrl = location.origin + location.pathname + '?portal=' + c.portalId;
-    html += `<div class="inv-row"><div>${c.name}<br><small style="color:#9ca3af">${c.whatsapp} | ${c.email}</small><div class="portal-link">Portal: ${portalUrl}</div></div><div class="client-actions"><button class="btn-blue" onclick="editClient('${c.id}')">Edit</button></div></div>`;
+    html += `<div class="client-folder">
+      <h3>${c.name}</h3>
+      <div style="color:#9ca3af;font-size:13px;margin-bottom:10px">${c.whatsapp} | ${c.email}</div>
+
+      <div class="link-box">
+        ${c.appLink? `<a href="${c.appLink}" target="_blank">📱 Open App</a>` : '<div style="flex:1;color:#6b7280;font-size:13px">No app link yet</div>'}
+        ${c.websiteLink? `<a href="${c.websiteLink}" target="_blank">🌐 Open Website</a>` : '<div style="flex:1;color:#6b7280;font-size:13px">No website link yet</div>'}
+      </div>
+
+      <div class="portal-link">Client Portal: ${portalUrl}</div>
+
+      <div class="client-actions">
+        <button class="btn-blue" onclick="editClient('${c.id}')">Edit Folder</button>
+        <button class="btn-cyan" onclick="copyLink('${portalUrl}')">Copy Portal Link</button>
+      </div>
+    </div>`;
   });
-  document.getElementById('clientList').innerHTML = html || '<div class="sub">No clients yet</div>';
+  document.getElementById('clientList').innerHTML = html || '<div class="sub">No clients yet. Add your first client folder.</div>';
 }
 
 function editClient(id){
   editingClientId = id;
   let client = clients.find(c=>c.id==id);
-  document.getElementById('editName').value = client.name;
-  document.getElementById('editWhatsapp').value = client.whatsapp;
-  document.getElementById('editEmail').value = client.email;
+  document.getElementById('editName').value = client.name || '';
+  document.getElementById('editWhatsapp').value = client.whatsapp || '';
+  document.getElementById('editEmail').value = client.email || '';
+  document.getElementById('editApp').value = client.appLink || '';
+  document.getElementById('editWebsite').value = client.websiteLink || '';
+  document.getElementById('editNotes').value = client.notes || '';
   document.getElementById('editModal').classList.add('active');
 }
 
@@ -262,20 +306,31 @@ function closeModal(e){
 }
 
 async function saveClient(){
-  let name = document.getElementById('editName').value;
-  let whatsapp = document.getElementById('editWhatsapp').value;
-  let email = document.getElementById('editEmail').value;
-  if(name && whatsapp){
-    await db.collection('twinz_clients').doc(editingClientId).update({name, whatsapp, email});
+  let data = {
+    name: document.getElementById('editName').value,
+    whatsapp: document.getElementById('editWhatsapp').value,
+    email: document.getElementById('editEmail').value,
+    appLink: document.getElementById('editApp').value,
+    websiteLink: document.getElementById('editWebsite').value,
+    notes: document.getElementById('editNotes').value
+  };
+  if(data.name && data.whatsapp){
+    await db.collection('twinz_clients').doc(editingClientId).update(data);
     closeModal();
+    alert('Client folder updated!');
   }
 }
 
 async function deleteClient(){
-  if(confirm('Delete this client? This cannot be undone.')){
+  if(confirm('Delete this client folder? This cannot be undone.')){
     await db.collection('twinz_clients').doc(editingClientId).delete();
     closeModal();
   }
+}
+
+function copyLink(link){
+  navigator.clipboard.writeText(link);
+  alert('Portal link copied!');
 }
 
 async function generateInvoice(){
@@ -298,7 +353,6 @@ async function generateInvoice(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  // Add Logo to PDF
   try {
     const logoImg = await fetch(COMPANY.logo).then(r=>r.blob()).then(b=>new Promise(resolve=>{
       let reader = new FileReader();
@@ -324,9 +378,8 @@ async function generateInvoice(){
   doc.line(20, 85, 190, 85);
   doc.text('Invoice No: ' + invNum, 20, 95);
   doc.text('Date: ' + new Date().toLocaleDateString('en-ZA'), 20, 102);
-  doc.text('Portal: ' + location.origin + location.pathname + '?portal=' + client.portalId, 20, 109);
 
-  let y = 125;
+  let y = 118;
   items.forEach(it=>{
     doc.text(it.desc + ' - R' + it.price.toFixed(2), 20, y);
     y += 7;
@@ -340,7 +393,7 @@ async function generateInvoice(){
 
   doc.setFontSize(10);
   doc.text('Banking: ' + COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 205);
-  doc.text('Upload EFT proof at client portal', 20, 212);
+  doc.text('Client Portal: ' + location.origin + location.pathname + '?portal=' + client.portalId, 20, 212);
 
   doc.save(invNum + '.pdf');
 
@@ -357,7 +410,7 @@ async function generateInvoice(){
     portalId: client.portalId
   });
 
-  let msg = `Hi ${client.name},\n\nTAX INVOICE ${invNum} from Twinz Cooperate.\nTotal: R${total} incl VAT\nView & Upload EFT Proof: ${location.origin + location.pathname}?portal=${client.portalId}\n\nThank you!`;
+  let msg = `Hi ${client.name},\n\nTAX INVOICE ${invNum} from Twinz Cooperate.\nTotal: R${total} incl VAT\nClient Portal: ${location.origin + location.pathname}?portal=${client.portalId}\n\nThank you!`;
   window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
 
   alert('Invoice created + WhatsApp opened');
@@ -416,7 +469,7 @@ function loadReports(){
   const months = ['Jan','Feb','Mar','Apr','May','Jun'];
   const data = months.map(m=>{
     return invoices.filter(i=>new Date(i.date).toLocaleString('en', {month:'short'})===m && i.status==='paid')
-    .reduce((a,b)=>a+b.total,0);
+   .reduce((a,b)=>a+b.total,0);
   });
   new Chart(ctx, {type:'bar', data:{labels:months, datasets:[{label:'Revenue R', data, backgroundColor:'#3b82f6'}]}});
 }
