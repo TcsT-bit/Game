@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Twinz Cooperate - GOD TIER v2.4.3</title>
+<title>Twinz Cooperate - GOD TIER v2.4.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -494,6 +494,31 @@ async function generateInvoice(){
     if(desc && price) items.push({desc, price: parseFloat(price)});
   }
 
+  await createInvoicePDF(invNum, client, items, subtotal, discount, vat, total, useVAT, false);
+
+  await db.collection('twinz_invoices').add({
+    num: invNum,
+    clientId,
+    clientName: client.name,
+    items,
+    subtotal: parseFloat(subtotal),
+    discount: parseFloat(discount),
+    vat: parseFloat(vat),
+    total: parseFloat(total),
+    useVAT,
+    status: 'unpaid',
+    date: new Date().toISOString(),
+    portalId: client.portalId
+  });
+
+  let msg = `Hi ${client.name},\n\n${useVAT? 'TAX INVOICE' : 'INVOICE'} ${invNum} from Twinz Cooperate.\nTotal: R${total}${useVAT? ' incl VAT' : ''}\nClient Portal: ${location.origin + location.pathname}?portal=${client.portalId}\n\nThank you!`;
+  window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
+
+  alert('Invoice created + WhatsApp opened');
+  location.reload();
+}
+
+async function createInvoicePDF(invNum, client, items, subtotal, discount, vat, total, useVAT, isPaid){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
@@ -505,6 +530,16 @@ async function generateInvoice(){
     }));
     doc.addImage(logoImg, 'JPEG', 160, 15, 30, 30);
   } catch(e){}
+
+  // PAID STAMP
+  if(isPaid){
+    doc.setFontSize(40);
+    doc.setTextColor(16, 185, 129);
+    doc.text('PAID', 75, 120, {angle: -45});
+    doc.setFontSize(12);
+    doc.text('Paid on: ' + new Date().toLocaleDateString('en-ZA'), 70, 135, {angle: -45});
+    doc.setTextColor(0);
+  }
 
   doc.setFontSize(22);
   doc.text(useVAT? 'TAX INVOICE' : 'INVOICE', 20, 22);
@@ -550,33 +585,13 @@ async function generateInvoice(){
   doc.line(20, 220, 190, 220);
   doc.setFontSize(12);
   doc.text('FOR OFFICE USE:', 20, 230);
-  doc.rect(20, 238, 8, 8); // checkbox
+  doc.rect(20, 238, 8, 8);
+  if(isPaid) doc.text('X', 22, 244); // tick if paid
   doc.text('PAID', 32, 245);
-  doc.text('Date Paid: _____________', 60, 245);
+  doc.text('Date Paid: ' + (isPaid? new Date().toLocaleDateString('en-ZA') : '_____________'), 60, 245);
   doc.text('Signature: _________________', 20, 255);
 
-  doc.save(invNum + '.pdf');
-
-  await db.collection('twinz_invoices').add({
-    num: invNum,
-    clientId,
-    clientName: client.name,
-    items,
-    subtotal: parseFloat(subtotal),
-    discount: parseFloat(discount),
-    vat: parseFloat(vat),
-    total: parseFloat(total),
-    useVAT,
-    status: 'unpaid',
-    date: new Date().toISOString(),
-    portalId: client.portalId
-  });
-
-  let msg = `Hi ${client.name},\n\n${useVAT? 'TAX INVOICE' : 'INVOICE'} ${invNum} from Twinz Cooperate.\nTotal: R${total}${useVAT? ' incl VAT' : ''}\nClient Portal: ${location.origin + location.pathname}?portal=${client.portalId}\n\nThank you!`;
-  window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
-
-  alert('Invoice created + WhatsApp opened');
-  location.reload();
+  doc.save(invNum + (isPaid? '_PAID' : '') + '.pdf');
 }
 
 function loadInvoices(){
@@ -585,11 +600,16 @@ function loadInvoices(){
     let cls = inv.status==='paid'? 'status-paid' : inv.proofUrl? 'status-pending' : '';
     let date = new Date(inv.date).toLocaleDateString('en-ZA');
     let type = inv.useVAT? 'TAX' : 'INV';
-    let paidBtn = inv.status==='paid'
-    ? `<button class="btn-gray" style="width:auto;padding:8px" disabled>✓ Paid</button>`
-      : inv.proofUrl
-      ? `<button class="btn-yellow" style="width:auto;padding:8px" onclick="viewProof('${inv.proofUrl}')">View Proof</button><button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`
-        : `<button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`;
+
+    let paidBtn = '';
+    if(inv.status==='paid'){
+      paidBtn = `<button class="btn-cyan" style="width:auto;padding:8px" onclick="sendPaidInvoice('${inv.id}')">Send Paid Invoice</button>`;
+    } else if(inv.proofUrl){
+      paidBtn = `<button class="btn-yellow" style="width:auto;padding:8px" onclick="viewProof('${inv.proofUrl}')">View Proof</button><button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`;
+    } else {
+      paidBtn = `<button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`;
+    }
+
     html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.clientName}<br><small style="color:#9ca3af">${type} | R${inv.total} | ${date} | ${inv.status}</small></div><div>${paidBtn}</div></div>`;
   });
   document.getElementById('invoiceList').innerHTML = html || '<div class="sub">No invoices yet</div>';
@@ -597,6 +617,17 @@ function loadInvoices(){
 
 async function markPaid(id){
   await db.collection('twinz_invoices').doc(id).update({status:'paid', paidDate: new Date().toISOString()});
+  alert('Marked as paid!');
+}
+
+async function sendPaidInvoice(invId){
+  const inv = invoices.find(i=>i.id==invId);
+  const client = clients.find(c=>c.id==inv.clientId);
+
+  await createInvoicePDF(inv.num, client, inv.items, inv.subtotal, inv.discount, inv.vat, inv.total, inv.useVAT, true);
+
+  let msg = `Hi ${client.name},\n\nPAID INVOICE ${inv.num} from Twinz Cooperate.\nTotal: R${inv.total} - PAID\nThank you for your payment!`;
+  window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
 }
 
 function viewProof(url){
