@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Twinz Cooperate - GOD TIER v2.4.5</title>
+<title>Twinz Cooperate - GOD TIER v2.4.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -94,7 +94,6 @@ input:checked +.slider:before{transform:translateX(24px)}
   <select id="clientSelect"><option value="">Select Client...</option></select>
   <button class="btn-yellow" onclick="addClient()">+ Add Client</button>
 
-  <!-- CLIENT DETAILS FOR INVOICE -->
   <div class="label">Client Email</div>
   <input id="clientEmail" placeholder="client@email.com">
 
@@ -335,7 +334,6 @@ function loadClientSelect(){
     recSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
   });
 
-  // Auto-fill email + address when client selected
   sel.onchange = () => {
     let c = clients.find(x=>x.id==sel.value);
     if(c){
@@ -548,6 +546,7 @@ async function generateInvoice(){
   location.reload();
 }
 
+// FIXED v2.4.6 - Logo + boxes no overlap - ONLY ONE FUNCTION
 async function createInvoicePDF(invNum, client, clientEmail, clientAddress, items, subtotal, discount, vat, total, useVAT, notes, isPaid){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -558,124 +557,9 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
       reader.onload = ()=>resolve(reader.result);
       reader.readAsDataURL(b);
     }));
-    doc.addImage(logoImg, 'JPEG', 155, 15, 35, 35);  // <-- OLD POSITION
-  } catch(e){}
-  ...
-  // stops at doc.save line
-}
-
-  // PAID STAMP
-  if(isPaid){
-    doc.setFontSize(50);
-    doc.setTextColor(16, 185, 129);
-    doc.text('PAID', 65, 130, {angle: -30});
-    doc.setFontSize(11);
-    doc.text('Paid on: ' + new Date().toLocaleDateString('en-ZA'), 70, 145, {angle: -30});
-    doc.setTextColor(0);
-  }
-
-  // HEADER
-  doc.setFontSize(24);
-  doc.setFont(undefined, 'bold');
-  doc.text(useVAT? 'TAX INVOICE' : 'INVOICE', 20, 25);
-
-  // COMPANY INFO BOX
-  doc.setDrawColor(37, 99, 235);
-  doc.setLineWidth(0.5);
-  doc.rect(20, 35, 90, 45);
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text(COMPANY.name, 23, 42);
-  doc.setFont(undefined, 'normal');
-  doc.text(COMPANY.address, 23, 49);
-  doc.text('Email: ' + COMPANY.email, 23, 56);
-  doc.text('Tel: ' + COMPANY.phone, 23, 63);
-  if(useVAT) doc.text('VAT: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 23, 70);
-  doc.text('Bank: ' + COMPANY.bank + ' Acc: ' + COMPANY.acc, 23, 77);
-
-  // INVOICE DETAILS BOX
-  doc.rect(120, 35, 70, 45);
-  doc.setFont(undefined, 'bold');
-  doc.text('INVOICE NO:', 123, 42);
-  doc.text('DATE:', 123, 49);
-  doc.text('DUE DATE:', 123, 56);
-  doc.setFont(undefined, 'normal');
-  doc.text(invNum, 160, 42);
-  let today = new Date();
-  let dueDate = new Date(today);
-  dueDate.setDate(today.getDate() + 7);
-  doc.text(today.toLocaleDateString('en-ZA'), 160, 49);
-  doc.text(dueDate.toLocaleDateString('en-ZA'), 160, 56);
-
-  // BILL TO SECTION
-  doc.setFontSize(11);
-  doc.setFont(undefined, 'bold');
-  doc.text('BILL TO:', 20, 95);
-  doc.setFont(undefined, 'normal');
-  doc.text(client.name, 20, 102);
-  if(clientEmail) doc.text('Email: ' + clientEmail, 20, 109);
-  if(clientAddress){
-    let addrLines = doc.splitTextToSize(clientAddress, 90);
-    doc.text(addrLines, 20, 116);
-  }
-
-  // TABLE HEADER
-  let y = 145;
-  doc.setFillColor(37, 99, 235);
-  doc.rect(20, y, 170, 8, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont(undefined, 'bold');
-  doc.text('#', 23, y+6);
-  doc.text('DESCRIPTION', 35, y+6);
-  doc.text('AMOUNT', 170, y+6);
-  doc.setTextColor(0);
-  y += 12;
-
-  // ITEMS
-  doc.setFont(undefined, 'normal');
-  items.forEach((it, idx)=>{
-    doc.text(String(idx+1), 23, y);
-    let descLines = doc.splitTextToSize(it.desc, 120);
-    doc.text(descLines, 35, y);
-    doc.text('R' + it.price.toFixed(2), 170, y);
-    y += descLines.length * 5 + 3;
-    doc.line(20, y, 190, y);
-    y += 5;
-  });
-
-  // TOTALS
-  y += 5;
-  doc.text('Subtotal:', 140, y);
-  doc.text('R' + subtotal, 170, y);
-  y += 7;
-
-  if(parseFloat(discount) > 0){
-    doc.setTextColor(220, 38, 38);
-    doc.text('Discount:', 140, y);
-    doc.text('-R' + discount, 170, y);
-    doc.setTextColor(0);
-    y += 7;
-  }
-
-  if(useVAT){
-    doc.text('VAT 15%:', 140, y);
-    doc.text('R' + vat, 170, y);
-    y += 7;
-async function createInvoicePDF(invNum, client, clientEmail, clientAddress, items, subtotal, discount, vat, total, useVAT, notes, isPaid){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  // LOGO FIRST - bigger, moved left, top right
-  try {
-    const logoImg = await fetch(COMPANY.logo).then(r=>r.blob()).then(b=>new Promise(resolve=>{
-      let reader = new FileReader();
-      reader.onload = ()=>resolve(reader.result);
-      reader.readAsDataURL(b);
-    }));
-    doc.addImage(logoImg, 'JPEG', 145, 12, 45, 45); // x=145 y=12 w=45 h=45
+    doc.addImage(logoImg, 'JPEG', 145, 12, 45, 45);
   } catch(e){}
 
-  // PAID STAMP
   if(isPaid){
     doc.setFontSize(50);
     doc.setTextColor(16, 185, 129);
@@ -685,12 +569,10 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
     doc.setTextColor(0);
   }
 
-  // HEADER
   doc.setFontSize(24);
   doc.setFont(undefined, 'bold');
   doc.text(useVAT? 'TAX INVOICE' : 'INVOICE', 20, 25);
 
-  // COMPANY INFO BOX - MOVED DOWN from y=35 to y=55
   doc.setDrawColor(37, 99, 235);
   doc.setLineWidth(0.5);
   doc.rect(20, 55, 90, 45);
@@ -704,7 +586,6 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
   if(useVAT) doc.text('VAT: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 23, 90);
   doc.text('Bank: ' + COMPANY.bank + ' Acc: ' + COMPANY.acc, 23, 97);
 
-  // INVOICE DETAILS BOX - MOVED DOWN from y=35 to y=55
   doc.rect(120, 55, 70, 45);
   doc.setFont(undefined, 'bold');
   doc.text('INVOICE NO:', 123, 62);
@@ -718,7 +599,6 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
   doc.text(today.toLocaleDateString('en-ZA'), 160, 69);
   doc.text(dueDate.toLocaleDateString('en-ZA'), 160, 76);
 
-  // BILL TO SECTION - moved down from 95 to 115
   doc.setFontSize(11);
   doc.setFont(undefined, 'bold');
   doc.text('BILL TO:', 20, 115);
@@ -730,7 +610,6 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
     doc.text(addrLines, 20, 136);
   }
 
-  // TABLE HEADER - moved down from 145 to 165
   let y = 165;
   doc.setFillColor(37, 99, 235);
   doc.rect(20, y, 170, 8, 'F');
@@ -742,7 +621,6 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
   doc.setTextColor(0);
   y += 12;
 
-  // ITEMS
   doc.setFont(undefined, 'normal');
   items.forEach((it, idx)=>{
     doc.text(String(idx+1), 23, y);
@@ -754,7 +632,6 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
     y += 5;
   });
 
-  // TOTALS
   y += 5;
   doc.text('Subtotal:', 140, y);
   doc.text('R' + subtotal, 170, y);
@@ -782,7 +659,6 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
   doc.text('TOTAL DUE:', 140, y);
   doc.text('R' + total, 170, y);
 
-  // NOTES
   y += 20;
   if(notes){
     doc.setFontSize(10);
@@ -793,7 +669,6 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
     doc.text(noteLines, 20, y+7);
   }
 
-  // FOOTER
   doc.setFontSize(8);
   doc.setTextColor(100);
   doc.line(20, 280, 190, 280);
