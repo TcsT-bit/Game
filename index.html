@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Twinz Cooperate - GOD TIER v2.3</title>
+<title>Twinz Cooperate - GOD TIER v2.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -20,7 +20,7 @@ h2{font-size:18px;margin-bottom:14px;color:#e5e7eb}
 input,textarea,select{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#0a0a0a;color:#f1f5f9;margin-bottom:11px;font-size:16px}
 button{background:#2563eb;color:white;border:none;padding:15px 22px;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;transition:0.2s;width:100%}
 button:active{transform:scale(0.97);background:#1d4ed8}
-.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}.btn-purple{background:#7c3aed}.btn-blue{background:#0ea5e9}.btn-cyan{background:#06b6d4}
+.btn-green{background:#16a34a}.btn-red{background:#dc2626}.btn-yellow{background:#ca8a04}.btn-purple{background:#7c3aed}.btn-blue{background:#0ea5e9}.btn-cyan{background:#06b6d4}.btn-gray{background:#4b5563}
 .grid{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .inv-row{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#0a0a0a;border-radius:10px;margin-bottom:10px;border-left:4px solid #2563eb}
@@ -31,6 +31,7 @@ button:active{transform:scale(0.97);background:#1d4ed8}
 .link-box a:hover{background:#334155}
 .file-item{display:flex;justify-content:space-between;align-items:center;background:#1e293b;padding:10px;border-radius:8px;margin-bottom:6px;border:1px solid #334155;font-size:13px}
 .file-item a{color:#60a5fa;text-decoration:none}
+.file-type{padding:3px 8px;border-radius:6px;background:#1e3a8a;font-size:11px;font-weight:700}
 .status-paid{border-left-color:#16a34a}
 .status-overdue{border-left-color:#dc2626}
 .status-pending{border-left-color:#ca8a04}
@@ -50,12 +51,22 @@ button:active{transform:scale(0.97);background:#1d4ed8}
 .label{font-size:12px;color:#9ca3af;margin-bottom:4px;margin-top:8px}
 .upload-progress{height:4px;background:#1e293b;border-radius:2px;margin-top:6px;overflow:hidden}
 .upload-bar{height:100%;background:#16a34a;width:0%;transition:width 0.3s}
+.toggle{display:flex;align-items:center;gap:10px;margin:12px 0;padding:12px;background:#0f172a;border-radius:10px;border:1px solid #334155}
+.switch{position:relative;display:inline-block;width:50px;height:26px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#374151;transition:.4s;border-radius:26px}
+.slider:before{position:absolute;content:"";height:20px;width:20px;left:3px;bottom:3px;background:white;transition:.4s;border-radius:50%}
+input:checked +.slider{background:#16a34a}
+input:checked +.slider:before{transform:translateX(24px)}
+.filter-bar{display:flex;gap:8px;margin-bottom:12px}
+.filter-bar input{flex:1}
+.filter-bar select{width:140px}
 @media(max-width:650px){.grid,.grid-3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<h1><img src="https://files.catbox.moe/6du2av.jpg" class="logo"> Twinz Cooperate ⚡ GOD TIER</h1>
+<h1><img src="https://files.catbox.moe/0zympr.jpeg" class="logo"> Twinz Cooperate ⚡ GOD TIER</h1>
 <div class="sub">IT Solutions & Web Development | VAT: 9819040198</div>
 
 <div class="tabs">
@@ -79,9 +90,17 @@ button:active{transform:scale(0.97);background:#1d4ed8}
 
 <!-- NEW INVOICE -->
 <div id="new" class="card hidden">
-  <h2>Create Tax Invoice</h2>
+  <h2>Create Invoice</h2>
   <select id="clientSelect"><option value="">Select Client...</option></select>
   <button class="btn-yellow" onclick="addClient()">+ Add Client</button>
+
+  <div class="toggle">
+    <label class="switch">
+      <input type="checkbox" id="vatToggle" checked onchange="calcTotal()">
+      <span class="slider"></span>
+    </label>
+    <span>Tax Invoice + VAT 15%</span>
+  </div>
 
   <div id="items" style="margin-top:16px">
     <div class="grid">
@@ -95,7 +114,7 @@ button:active{transform:scale(0.97);background:#1d4ed8}
     <div style="display:flex;justify-content:space-between;margin-bottom:8px">
       <span>Subtotal:</span><span>R<span id="subtotal">0.00</span></span>
     </div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+    <div id="vatRow" style="display:flex;justify-content:space-between;margin-bottom:8px">
       <span>VAT 15%:</span><span>R<span id="vat">0.00</span></span>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700">
@@ -120,7 +139,7 @@ button:active{transform:scale(0.97);background:#1d4ed8}
 <!-- CLIENT CLOUD FOLDERS -->
 <div id="clients" class="card hidden">
   <h2>Client Cloud Folders</h2>
-  <div class="sub">Each client has their own folder. Save links + upload APKs, source code, contracts.</div>
+  <div class="sub">Search files + sort by type: APK, ZIP, PDF, PSD</div>
   <div id="clientList"></div>
 </div>
 
@@ -158,7 +177,18 @@ button:active{transform:scale(0.97);background:#1d4ed8}
     <div class="upload-progress"><div class="upload-bar" id="uploadBar"></div></div>
     <button class="btn-cyan" onclick="uploadFiles()">Upload to This Client</button>
 
-    <div class="label">Saved Files</div>
+    <div class="label">Search & Filter Files</div>
+    <div class="filter-bar">
+      <input placeholder="Search files..." id="fileSearch" oninput="filterFiles()">
+      <select id="fileFilter" onchange="filterFiles()">
+        <option value="all">All Types</option>
+        <option value="apk">APK</option>
+        <option value="zip">ZIP</option>
+        <option value="pdf">PDF</option>
+        <option value="psd">PSD</option>
+        <option value="jpg">Images</option>
+      </select>
+    </div>
     <div id="fileList"></div>
 
     <div class="label">Notes / Credentials</div>
@@ -200,7 +230,7 @@ const COMPANY = {
   bank: 'Standard Bank',
   acc: '10 26 459 443 4',
   branch: '006145',
-  logo: 'https://files.catbox.moe/6du2av.jpg'
+  logo: 'https://files.catbox.moe/0zympr.jpeg'
 };
 
 function showTab(tab){
@@ -247,7 +277,10 @@ function calcTotal(){
   for(let i=0; i<itemCount; i++){
     subtotal += parseFloat(document.getElementById('price'+i)?.value || 0);
   }
-  let vat = subtotal * 0.15;
+  let useVAT = document.getElementById('vatToggle').checked;
+  let vat = useVAT? subtotal * 0.15 : 0;
+
+  document.getElementById('vatRow').style.display = useVAT? 'flex' : 'none';
   document.getElementById('subtotal').textContent = subtotal.toFixed(2);
   document.getElementById('vat').textContent = vat.toFixed(2);
   document.getElementById('total').textContent = (subtotal + vat).toFixed(2);
@@ -285,7 +318,7 @@ function loadClients(){
     let portalUrl = location.origin + location.pathname + '?portal=' + c.portalId;
     let filesHtml = '';
     if(c.files && c.files.length > 0){
-      filesHtml = c.files.map(f=>`<div class="file-item"><a href="${f.url}" target="_blank">📁 ${f.name}</a><button class="btn-red" style="width:auto;padding:4px 8px;font-size:11px" onclick="deleteFile('${c.id}','${f.url}')">Delete</button></div>`).join('');
+      filesHtml = c.files.map(f=>`<div class="file-item" data-name="${f.name.toLowerCase()}" data-type="${getFileType(f.name)}"><a href="${f.url}" target="_blank"><span class="file-type">${getFileType(f.name).toUpperCase()}</span> ${f.name}</a><button class="btn-red" style="width:auto;padding:4px 8px;font-size:11px" onclick="deleteFile('${c.id}','${f.url}')">Delete</button></div>`).join('');
     }
 
     html += `<div class="client-folder">
@@ -310,6 +343,12 @@ function loadClients(){
   document.getElementById('clientList').innerHTML = html || '<div class="sub">No clients yet. Add your first client folder.</div>';
 }
 
+function getFileType(filename){
+  let ext = filename.split('.').pop().toLowerCase();
+  if(['jpg','jpeg','png','gif','webp'].includes(ext)) return 'jpg';
+  return ext;
+}
+
 function editClient(id){
   editingClientId = id;
   editingClientData = clients.find(c=>c.id==id);
@@ -320,13 +359,24 @@ function editClient(id){
   document.getElementById('editWebsite').value = editingClientData.websiteLink || '';
   document.getElementById('editNotes').value = editingClientData.notes || '';
 
-  let filesHtml = '';
-  if(editingClientData.files && editingClientData.files.length > 0){
-    filesHtml = editingClientData.files.map(f=>`<div class="file-item"><a href="${f.url}" target="_blank">📁 ${f.name}</a><button class="btn-red" style="width:auto;padding:4px 8px;font-size:11px" onclick="deleteFile('${id}','${f.url}')">X</button></div>`).join('');
-  }
-  document.getElementById('fileList').innerHTML = filesHtml || '<div style="color:#6b7280;font-size:13px">No files uploaded yet</div>';
-
+  filterFiles();
   document.getElementById('editModal').classList.add('active');
+}
+
+function filterFiles(){
+  if(!editingClientData) return;
+  let search = document.getElementById('fileSearch').value.toLowerCase();
+  let filter = document.getElementById('fileFilter').value;
+  let files = editingClientData.files || [];
+
+  let filesHtml = files.filter(f=>{
+    let type = getFileType(f.name);
+    let matchSearch = f.name.toLowerCase().includes(search);
+    let matchFilter = filter==='all' || type===filter;
+    return matchSearch && matchFilter;
+  }).map(f=>`<div class="file-item" data-name="${f.name.toLowerCase()}" data-type="${getFileType(f.name)}"><a href="${f.url}" target="_blank"><span class="file-type">${getFileType(f.name).toUpperCase()}</span> ${f.name}</a><button class="btn-red" style="width:auto;padding:4px 8px;font-size:11px" onclick="deleteFile('${editingClientId}','${f.url}')">X</button></div>`).join('');
+
+  document.getElementById('fileList').innerHTML = filesHtml || '<div style="color:#6b7280;font-size:13px">No files found</div>';
 }
 
 function closeModal(e){
@@ -362,7 +412,7 @@ async function uploadFiles(){
   document.getElementById('fileUpload').value = '';
   bar.style.width = '0%';
   alert('Files uploaded!');
-  editClient(editingClientId); // refresh modal
+  editClient(editingClientId);
 }
 
 async function deleteFile(clientId, url){
@@ -371,7 +421,6 @@ async function deleteFile(clientId, url){
   let newFiles = client.files.filter(f=>f.url!==url);
   await db.collection('twinz_clients').doc(clientId).update({files: newFiles});
 
-  // Delete from storage
   try {
     const ref = storage.refFromURL(url);
     await ref.delete();
@@ -399,7 +448,6 @@ async function saveClient(){
 
 async function deleteClient(){
   if(confirm('Delete this client folder and all files?')){
-    // Delete all files from storage
     if(editingClientData.files){
       for(let f of editingClientData.files){
         try { await storage.refFromURL(f.url).delete(); } catch(e){}
@@ -423,6 +471,7 @@ async function generateInvoice(){
   const total = document.getElementById('total').textContent;
   const subtotal = document.getElementById('subtotal').textContent;
   const vat = document.getElementById('vat').textContent;
+  const useVAT = document.getElementById('vatToggle').checked;
   const invNum = 'TCS-' + new Date().getFullYear() + '-' + String(invoices.length+1).padStart(4,'0');
 
   let items = [];
@@ -445,14 +494,14 @@ async function generateInvoice(){
   } catch(e){}
 
   doc.setFontSize(22);
-  doc.text('TAX INVOICE', 20, 22);
+  doc.text(useVAT? 'TAX INVOICE' : 'INVOICE', 20, 22);
 
   doc.setFontSize(11);
   doc.text(COMPANY.name, 20, 45);
   doc.text(COMPANY.address, 20, 52);
   doc.text('Email: ' + COMPANY.email, 20, 59);
   doc.text('Tel: ' + COMPANY.phone, 20, 66);
-  doc.text('VAT No: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 20, 73);
+  if(useVAT) doc.text('VAT No: ' + COMPANY.vat + ' | Reg: ' + COMPANY.reg, 20, 73);
 
   doc.text('Bill To: ' + client.name, 120, 45);
   doc.text('WhatsApp: ' + client.whatsapp, 120, 52);
@@ -469,9 +518,9 @@ async function generateInvoice(){
   doc.line(20, 160, 190, 160);
 
   doc.text('Subtotal: R' + subtotal, 140, 170);
-  doc.text('VAT 15%: R' + vat, 140, 177);
+  if(useVAT) doc.text('VAT 15%: R' + vat, 140, 177);
   doc.setFontSize(14);
-  doc.text('TOTAL DUE: R' + total, 140, 188);
+  doc.text('TOTAL DUE: R' + total, 140, useVAT? 188 : 177);
 
   doc.setFontSize(10);
   doc.text('Banking: ' + COMPANY.bank + ' | Acc: ' + COMPANY.acc + ' | Branch: ' + COMPANY.branch, 20, 205);
@@ -487,12 +536,13 @@ async function generateInvoice(){
     subtotal: parseFloat(subtotal),
     vat: parseFloat(vat),
     total: parseFloat(total),
+    useVAT,
     status: 'unpaid',
     date: new Date().toISOString(),
     portalId: client.portalId
   });
 
-  let msg = `Hi ${client.name},\n\nTAX INVOICE ${invNum} from Twinz Cooperate.\nTotal: R${total} incl VAT\nClient Portal: ${location.origin + location.pathname}?portal=${client.portalId}\n\nThank you!`;
+  let msg = `Hi ${client.name},\n\n${useVAT? 'TAX INVOICE' : 'INVOICE'} ${invNum} from Twinz Cooperate.\nTotal: R${total}${useVAT? ' incl VAT' : ''}\nClient Portal: ${location.origin + location.pathname}?portal=${client.portalId}\n\nThank you!`;
   window.open(`https://wa.me/${client.whatsapp.replace(/\D/g,'')}/?text=${encodeURIComponent(msg)}`);
 
   alert('Invoice created + WhatsApp opened');
@@ -504,8 +554,9 @@ function loadInvoices(){
   invoices.sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(inv=>{
     let cls = inv.status==='paid'? 'status-paid' : inv.proofUrl? 'status-pending' : '';
     let date = new Date(inv.date).toLocaleDateString('en-ZA');
+    let type = inv.useVAT? 'TAX' : 'INV';
     let proofBtn = inv.proofUrl? `<button class="btn-yellow" style="width:auto;padding:8px" onclick="viewProof('${inv.proofUrl}')">View Proof</button><button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Approve</button>` : `<button class="btn-green" style="width:auto;padding:8px" onclick="markPaid('${inv.id}')">Mark Paid</button>`;
-    html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.clientName}<br><small style="color:#9ca3af">R${inv.total} | ${date} | ${inv.status}</small></div><div>${proofBtn}</div></div>`;
+    html += `<div class="inv-row ${cls}"><div>${inv.num} - ${inv.clientName}<br><small style="color:#9ca3af">${type} | R${inv.total} | ${date} | ${inv.status}</small></div><div>${proofBtn}</div></div>`;
   });
   document.getElementById('invoiceList').innerHTML = html || '<div class="sub">No invoices yet</div>';
 }
@@ -543,7 +594,7 @@ function updateDashboard(){
   let outstanding = invoices.filter(i=>i.status==='unpaid').reduce((a,b)=>a+b.total,0);
   document.getElementById('statTotal').textContent = 'R' + total.toFixed(0);
   document.getElementById('statOutstanding').textContent = 'R' + outstanding.toFixed(0);
-  document.getElementById('statClients').textContent = clients.length;
+  document.getElementById('statClients').length;
 }
 
 function loadReports(){
@@ -551,7 +602,7 @@ function loadReports(){
   const months = ['Jan','Feb','Mar','Apr','May','Jun'];
   const data = months.map(m=>{
     return invoices.filter(i=>new Date(i.date).toLocaleString('en', {month:'short'})===m && i.status==='paid')
-  .reduce((a,b)=>a+b.total,0);
+ .reduce((a,b)=>a+b.total,0);
   });
   new Chart(ctx, {type:'bar', data:{labels:months, datasets:[{label:'Revenue R', data, backgroundColor:'#3b82f6'}]}});
 }
