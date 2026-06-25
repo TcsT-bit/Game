@@ -557,7 +557,7 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
       reader.onload = ()=>resolve(reader.result);
       reader.readAsDataURL(b);
     }));
-    doc.addImage(logoImg, 'JPEG', 160, 15, 25, 25);
+    doc.addImage(logoImg, 'JPEG', 163, 15, 25, 25);
   } catch(e){}
 
   if(isPaid){
@@ -600,15 +600,16 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
   doc.text(dueDate.toLocaleDateString('en-ZA'), 160, 76);
 
   doc.setFontSize(11);
-  doc.setFont(undefined, 'bold');
-  doc.text('BILL TO:', 20, 115);
-  doc.setFont(undefined, 'normal');
-  doc.text(client.name, 20, 122);
-  if(clientEmail) doc.text('Email: ' + clientEmail, 20, 129);
-  if(clientAddress){
-    let addrLines = doc.splitTextToSize(clientAddress, 90);
-    doc.text(addrLines, 20, 136);
-  }
+doc.setFont(undefined, 'bold');
+doc.text('BILL TO:', 20, 115);
+doc.setFont(undefined, 'normal');
+doc.text(client.name, 20, 122);
+if(client.whatsapp) doc.text('Tel: ' + client.whatsapp, 20, 129); // ADD THIS LINE
+if(clientEmail) doc.text('Email: ' + clientEmail, 20, 136); // changed 129→136
+if(clientAddress){
+  let addrLines = doc.splitTextToSize(clientAddress, 90);
+  doc.text(addrLines, 20, 143); // changed 136→143
+}
 
   let y = 165;
   doc.setFillColor(37, 99, 235);
