@@ -557,7 +557,7 @@ async function createInvoicePDF(invNum, client, clientEmail, clientAddress, item
       reader.onload = ()=>resolve(reader.result);
       reader.readAsDataURL(b);
     }));
-    doc.addImage(logoImg, 'JPEG', 145, 12, 45, 45);
+    doc.addImage(logoImg, 'JPEG', 140, 15, 40, 40);
   } catch(e){}
 
   if(isPaid){
