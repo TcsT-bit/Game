@@ -758,12 +758,12 @@ function updateDashboard(){
 
 function loadReports(){
   const ctx = document.getElementById('revenueChart');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const data = months.map(m=>{
     return invoices.filter(i=>new Date(i.date).toLocaleString('en', {month:'short'})===m && i.status==='paid')
 .reduce((a,b)=>a+b.total,0);
   });
-  new Chart(ctx, {type:'bar', data:{labels:months, datasets:[{label:'Revenue R', data, backgroundColor:'#3b82f6'}]}});
+  new Chart(ctx, {type:'bar', data:{labels:months, datasets:[{label:'Revenue R', data, backgroundColor:'#3b82f6', borderRadius:8}]}, options:{responsive:true, maintainAspectRatio:false}});
 }
 
 const urlParams = new URLSearchParams(window.location.search);
